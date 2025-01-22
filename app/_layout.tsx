@@ -1,39 +1,71 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo'
+import { tokenCache } from "@/utils/cache";
+import Colors from "@/constants/Colors";
+import { useEffect, Suspense } from "react";
+import { ActivityIndicator, View } from "react-native";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+if (!publishableKey) {
+  throw new Error(
+    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
+  )
+}
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
 
-  if (!loaded) {
-    return null;
+const InitialLayout = () => {
+  
+const router = useRouter();
+const { isLoaded, isSignedIn } = useAuth();
+const segments = useSegments();
+const pathname = usePathname();
+useEffect(() => {
+  if (!isLoaded) return;
+  const inAuthGroup = segments[0] === '(authenticated)';
+
+  // if (isSignedIn && !inAuthGroup) {
+  if (true) {
+    router.replace('/(authenticated)/(tabs)/dashboard');
+  } else if (!isSignedIn && pathname !== '/') {
+    router.replace('/');
   }
+}, [isSignedIn]);
 
+if (!isLoaded) {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={Colors.midnightOcean} />
+    </View>
   );
 }
+
+  return (
+    <Stack
+    screenOptions={{
+      contentStyle: {
+        backgroundColor: Colors.sandBeige,
+      },
+    }}>
+    <Stack.Screen name="index" options={{ headerShown: false }} />
+    <Stack.Screen name="(authenticated)" options={{ headerShown: false }} />
+  </Stack>
+  );
+}
+// function Loading() {
+//   return <ActivityIndicator size="large" color={Colors.foamWhite} />;
+// }
+
+function RootLayoutNav() {
+
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <ClerkLoaded>
+        <InitialLayout/>
+      </ClerkLoaded>
+    </ClerkProvider>
+  )
+}
+
+export default RootLayoutNav;

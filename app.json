@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.oeddahri.ahlanly"
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +33,15 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      [
+        "expo-dev-launcher",
+        {
+          "launchMode": "most-recent"
+        }
+      ],
+      "react-native-bottom-tabs",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
