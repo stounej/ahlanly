@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 const ApartmentDetails = () => {
-  const [modalVisible, setModalVisible] = useState(false);
   const { id } = useLocalSearchParams();
 
   const apartment = {
