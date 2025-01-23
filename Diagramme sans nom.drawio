@@ -73,6 +73,9 @@
         <mxCell id="nByJtgB60UtprXY8_PDG-58" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nByJtgB60UtprXY8_PDG-22" target="nByJtgB60UtprXY8_PDG-57">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-83" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nByJtgB60UtprXY8_PDG-22" target="nByJtgB60UtprXY8_PDG-82">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="nByJtgB60UtprXY8_PDG-22" value="TABS" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="389.83" y="555" width="120" height="60" as="geometry" />
         </mxCell>
@@ -212,6 +215,27 @@
         </mxCell>
         <mxCell id="nByJtgB60UtprXY8_PDG-80" value="Statistiques" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="569.9999999999999" y="660" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-85" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nByJtgB60UtprXY8_PDG-82" target="nByJtgB60UtprXY8_PDG-84">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-87" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nByJtgB60UtprXY8_PDG-82" target="nByJtgB60UtprXY8_PDG-86">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-89" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nByJtgB60UtprXY8_PDG-82" target="nByJtgB60UtprXY8_PDG-88">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-82" value="Calendar" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="389.83" y="820" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-84" value="Block date" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="589.8299999999999" y="820" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-86" value="Show dispos" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="389.83" y="960" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nByJtgB60UtprXY8_PDG-88" value="Select properties" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="189.82999999999998" y="820" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
