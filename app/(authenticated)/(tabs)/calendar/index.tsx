@@ -1,92 +1,138 @@
-import React from 'react';
-import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
+import { Reservation } from '@/services';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { Picker } from '@react-native-picker/picker'; // For the select list
+import ReservationBottomSheet from '../../(modals)/reservations/reservationBottomSheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, useDateRange } from "@marceloterreiro/flash-calendar";
 
-interface Apartment {
-  id: string;
-  name: string;
-  image: string;
-}
 
-const App = () => {
-  const apartments = [
-    { id: '1', name: 'Appartement 1', image: 'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' },
-    { id: '2', name: 'Appartement 2', image: 'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' },
-    { id: '3', name: 'Appartement 3', image: 'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' },
-    // Ajoutez ici d'autres appartements
+const Calendrier = () => {
+  // Dummy Data
+  const [showReservation, setShowReservation] = useState(true);
+
+  const appartements = [
+    {
+      id: '1',
+      title: 'Cozy Apartment',
+      thumbnail: 'https://via.placeholder.com/100',
+    },
+    {
+      id: '2',
+      title: 'Luxury Villa',
+      thumbnail: 'https://via.placeholder.com/100',
+    },
+    {
+      id: '3',
+      title: 'Beach House',
+      thumbnail: 'https://via.placeholder.com/100',
+    },
   ];
 
+  const [selectedAppartement, setSelectedAppartement] = useState(appartements[0].id);
+  const [hasReservation, setHasReservation] = useState(true); // Change to false if no reservation
   const {
     calendarActiveDateRanges,
     onCalendarDayPress,
+    // Also available for your convenience:
+    // dateRange, // { startId?: string, endId?: string }
+    // isDateRangeValid, // boolean
+    // onClearDateRange, // () => void
   } = useDateRange();
-
-  const renderApartmentItem = ({ item }: { item: Apartment }) => (
-    <View style={styles.apartmentItem}>
-      <Image source={{ uri: item.image }} style={styles.apartmentImage} />
-      <Text style={styles.apartmentName}>{item.name}</Text>
-    </View>
-  );
+  // Dummy Reservation Data
+  const reservation: Reservation = {
+    id: '1',
+    guest: 'John Doe',
+    property: 'Cozy Apartment',
+    checkIn: '2023-10-15',
+    checkOut: '2023-10-20',
+    status: 'Confirmed',
+    price: '$500',
+    contact: '+212 6 12 34 56 78'
+  };
 
   return (
     <View style={styles.container}>
-      {/* Liste des appartements (35%) */}
-      <View style={styles.apartmentListContainer}>
-        <FlatList
-          data={apartments}
-          renderItem={renderApartmentItem}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.apartmentList}
+      {/* Select List */}
+      <View style={styles.selectContainer}>
+        <Picker
+          selectedValue={selectedAppartement}
+          onValueChange={(itemValue) => setSelectedAppartement(itemValue)}
+          style={styles.picker}
+        >
+          {appartements.map((appartement) => (
+            <Picker.Item
+              key={appartement.id}
+              label={appartement.title}
+              value={appartement.id}
+            />
+          ))}
+        </Picker>
+        <Image
+          source={{ uri: appartements.find((a) => a.id === selectedAppartement)?.thumbnail || appartements[0].thumbnail }}
+          style={styles.thumbnail}
         />
       </View>
-      
-      {/* Composant de calendrier (65%) */}
-      <View style={styles.calendarContainer}>
-        <Calendar.List
-          calendarActiveDateRanges={calendarActiveDateRanges}
-          onCalendarDayPress={onCalendarDayPress}
-        />
-      </View>
+
+      {/* Calendrier View */}
+      <Calendar.List
+      calendarActiveDateRanges={calendarActiveDateRanges}
+      onCalendarDayPress={onCalendarDayPress}
+    />
+
+      {/* Footer Modal (Conditional) */}
+      {showReservation && (
+          <ReservationBottomSheet
+            reservation={reservation}
+            onClose={() => setShowReservation(false)}
+          />
+      )}
     </View>
+      
+
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
-    paddingHorizontal: 10,
+    backgroundColor: '#F5F5F5',
   },
-  apartmentListContainer: {
-    flex: 0.3,  // 35% de la hauteur de l'écran
-    marginBottom: 20, // Espacement entre la liste et le calendrier
-  },
-  apartmentList: {
-    height: '100%',
-  },
-  apartmentItem: {
+  selectContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 5,
-    padding: 10,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  apartmentImage: {
+  picker: {
+    flex: 1,
+  },
+  thumbnail: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    marginRight: 10,
+    borderRadius: 8,
+    marginLeft: 16,
   },
-  apartmentName: {
-    fontSize: 16,
+  calendrierContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  calendrierPlaceholder: {
+    fontSize: 20,
     fontWeight: 'bold',
-  },
-  calendarContainer: {
-    flex: 0.65,  // 65% de la hauteur de l'écran
+    color: '#333333',
   },
 });
 
-export default App;
+export default Calendrier;

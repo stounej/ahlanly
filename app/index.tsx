@@ -49,6 +49,7 @@ const LoginScreen = () => {
   };
 
   return (
+    
     <View style={[styles.container, { paddingTop: top }]}>
       <Image source={require('@/assets/images/icn.jpeg')} style={styles.loginImage} />
       <Image source={require('@/assets/images/login1.jpeg')} style={styles.banner} />

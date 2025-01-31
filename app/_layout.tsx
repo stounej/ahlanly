@@ -3,7 +3,9 @@ import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo'
 import { tokenCache } from "@/utils/cache";
 import Colors from "@/constants/Colors";
 import { useEffect, Suspense } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string
@@ -42,6 +44,8 @@ if (!isLoaded) {
 }
 
   return (
+    <GestureHandlerRootView >
+    <BottomSheetModalProvider>
     <Stack
     screenOptions={{
       contentStyle: {
@@ -51,12 +55,11 @@ if (!isLoaded) {
     <Stack.Screen name="index" options={{ headerShown: false }} />
     <Stack.Screen name="(authenticated)" options={{ headerShown: false }} />
   </Stack>
+  </BottomSheetModalProvider>
+  </GestureHandlerRootView>
+
   );
 }
-// function Loading() {
-//   return <ActivityIndicator size="large" color={Colors.foamWhite} />;
-// }
-
 function RootLayoutNav() {
 
   return (

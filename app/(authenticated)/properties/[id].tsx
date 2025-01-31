@@ -1,177 +1,385 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // For icons
+import { propertiesService, Property, Equipment, Task, BookingSetting, HouseRule } from '@/services';
+import { useLocalSearchParams } from 'expo-router';
 
-const ApartmentDetails = () => {
-  const { id } = useLocalSearchParams();
 
-  const apartment = {
-    title: 'Appartement T2 - Vue sur la mer',
-    description:
-      'Un magnifique appartement avec une vue imprenable sur la mer. Idéal pour des vacances relaxantes.',
-    price: 120,
-    rooms: 2,
-    size: '50m²',
-    location: 'Essaouira, Maroc',
-    availability: true,
-    photos: [
-      'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg',
-      'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg',
-      'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg',
-    ],
-    furniture: [
-      { id: '1', name: 'Lit double', description: 'Confortable pour 2 personnes.' },
-      { id: '2', name: 'Table à manger', description: 'Pour 4 personnes.' },
-      { id: '3', name: 'Canapé', description: 'Grand canapé en cuir.' },
-      { id: '4', name: 'Armoire', description: 'Armoire spacieuse en bois massif.' },
-    ],
-  };
 
+const AppartementDetails = () => {
+  const params = useLocalSearchParams();
+  const [appartement, setAppartment] = useState<Property>({} as Property);
+
+  useEffect(() => {
+    const fetchProperty = async () => {
+      console.log(params.id);
+      
+      const data = await propertiesService.getById(params.id as string);
+      console.log(data);
+      
+      setAppartment(data);
+    };
+
+    fetchProperty();
+  }, [params.id]);
+
+  // Render Meuble Item
+  const renderMeuble = ({ item }: { item: Equipment }) => (
+    <View style={styles.meubleCard}>
+      <Text style={styles.meubleText}>{item.name}</Text>
+    </View>
+  );
+
+  // Render Task Item
+  const renderTask = ({ item }: { item: Task }) => (
+    <View style={styles.taskCard}>
+      <Text style={styles.taskText}>{item.title}</Text>
+    </View>
+  );
+
+    // Render Task Item
+    const renderReservationSetting = ({ item }: { item: BookingSetting   }) => (
+      <View style={styles.taskCard}>
+        <Text style={styles.taskText}>{item.cancellation_policy}</Text>
+      </View>
+    );
+
+     // Render Task Item
+     const renderHouseRule = ({ item }: { item: HouseRule   }) => (
+      <View style={styles.taskCard}>
+        <Text style={styles.taskText}>{item.title}</Text>
+      </View>
+    );
   return (
-    <ScrollView style={styles.container}>
-      {/* Galerie de photos */}
-      <ScrollView horizontal pagingEnabled style={styles.photoGallery}>
-        {apartment.photos.map((photo, index) => (
-          <Image key={index} source={{ uri: photo }} style={styles.photo} />
-        ))}
+    <View style={styles.container}>
+      {/* Scrollable Content */}
+      <ScrollView style={styles.scrollContainer}>
+        {/* Image */}
+        <Image source={{ uri: appartement.image }} style={styles.image} />
+
+        {/* Title with Icons */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{appartement.title}</Text>
+          <View style={styles.iconsContainer}>
+            <TouchableOpacity onPress={() => console.log('share pressed')}>
+              <Ionicons name="share" size={24} color="grey" style={styles.icon} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Details */}
+        <View style={styles.detailsContainer}>
+          <Text style={styles.city}>{appartement.city}</Text>
+          <Text style={styles.price}>{appartement.price}</Text>
+          <Text style={styles.description}>{appartement.description}</Text>
+
+          {/* Availability */}
+          <View style={styles.availabilityContainer}>
+            <View style={styles.availabilityTextContainer}>
+              <Text style={styles.availabilityText}>
+                {appartement.available ? 'Disponible' : 'Non disponible'}
+              </Text>
+              <Text style={styles.availabilityDate}>
+                {appartement.available
+                  ? `Jusqu'au ${appartement.availableUntil}`
+                  : `Disponible à partir du ${appartement.availableUntil}`}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.calendarButton}>
+              <Text style={styles.calendarButtonText}>Afficher Calendrier</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Number of Rooms */}
+          <Text style={styles.infoText}>Nombre de pièces: {appartement.number_of_rooms}</Text>
+
+          {/* Additional Info */}
+          <Text style={styles.infoText}>Informations supplémentaires: {appartement.additional_info}</Text>
+        </View>
+
+        {/* Meubles Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Meubles ({appartement.equipment?.length})</Text>
+            <TouchableOpacity style={styles.voirPlusButton}>
+              <Text style={styles.voirPlusText}>Voir plus</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={appartement?.equipment?.slice(0, 3)} // Show only 3 items
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderMeuble}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+
+        {/* Tasks Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Tasks ({appartement.task?.length})</Text>
+            <TouchableOpacity style={styles.voirPlusButton}>
+              <Text style={styles.voirPlusText}>Voir plus</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={appartement.task?.slice(0, 3)} // Show only 3 items
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderTask}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+
+        {/* Type de logement Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Type de logement</Text>
+          <Text style={styles.sectionContent}>{appartement.type_de_logement}</Text>
+        </View>
+
+        {/* Nombre de voyageurs Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Nombre de voyageurs</Text>
+          <Text style={styles.sectionContent}>{appartement.nombre_de_voyageurs} voyageurs</Text>
+        </View>
+
+        {/* Emplacement Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Emplacement</Text>
+          <Text style={styles.sectionContent}>{appartement.emplacement}</Text>
+        </View>
+
+        {/* Paramètres de réservation Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Paramètres de réservation ({appartement.bookingsetting?.length})</Text>
+            <TouchableOpacity style={styles.voirPlusButton}>
+              <Text style={styles.voirPlusText}>Voir plus</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={appartement.bookingsetting?.slice(0, 3)} // Show only 3 items
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderReservationSetting}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+       
+
+        {/* Règlement intérieur Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Règlement intérieur ({appartement.houserule?.length})</Text>
+            <TouchableOpacity style={styles.voirPlusButton}>
+              <Text style={styles.voirPlusText}>Voir plus</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={appartement.houserule?.slice(0, 3)} // Show only 3 items
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderHouseRule}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+       
+
+        {/* Conditions d'annulation Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Conditions d'annulation</Text>
+          <Text style={styles.sectionContent}>{appartement.conditionsAnnulation}</Text>
+        </View>
+
+        <View style={styles.iconsContainer}>
+            <TouchableOpacity onPress={() => console.log('share pressed')}>
+              <Ionicons name="trash" size={24} color="red" style={styles.icon} />
+              <Text>Supprimer</Text>
+            </TouchableOpacity>
+          </View>
       </ScrollView>
 
-      {/* Informations de l'appartement */}
-      <View style={styles.detailsContainer}>
-        <Text style={styles.title}>{apartment.title}</Text>
-        <Text style={styles.location}>{apartment.location}</Text>
-        <Text style={styles.price}>Prix : {apartment.price} €/nuit</Text>
-        <Text style={styles.description}>{apartment.description}</Text>
-        <Text style={styles.info}>Nombre de pièces : {apartment.rooms}</Text>
-        <Text style={styles.info}>Taille : {apartment.size}</Text>
-        <Text style={styles.info}>
-          Disponibilité : {apartment.availability ? 'Oui' : 'Non'}
-        </Text>
-      </View>
+      
 
-      {/* Actions */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push(`../(modals)/equipments/${id}`)}
-        >
-          <Text style={styles.buttonText}>Voir les meubles</Text>
+      {/* Fixed Footer */}
+      <View style={[styles.footer, { gap: 150 }]}>
+        <TouchableOpacity onPress={() => console.log('Modifier pressed')}>
+          <Ionicons name="pencil" size={24} color="#1E90FF" style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerButton}>
+          <Text style={styles.footerButtonText}>Bloquer une date</Text>
         </TouchableOpacity>
       </View>
-     
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
   },
-  photoGallery: {
-    height: 300,
-    marginBottom: 10,
+  scrollContainer: {
+    flex: 1,
   },
-  photo: {
-    width: 400,
-    height: 300,
-    resizeMode: 'cover',
-    marginRight: 5,
+  image: {
+    width: '100%',
+    height: 250,
   },
-  detailsContainer: {
-    padding: 15,
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#333333',
   },
-  location: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 5,
+  iconsContainer: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  icon: {
+    marginLeft: 8,
+  },
+  detailsContainer: {
+    padding: 16,
+  },
+  city: {
+    fontSize: 18,
+    color: '#666666',
+    marginBottom: 8,
   },
   price: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#1E90FF',
+    marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    lineHeight: 24,
+    color: '#333333',
+    marginBottom: 16,
+  },
+  availabilityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  availabilityTextContainer: {
+    flex: 1,
+  },
+  availabilityText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  availabilityDate: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  calendarButton: {
+    backgroundColor: '#1E90FF',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  calendarButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#333333',
+    marginBottom: 8,
+  },
+  section: {
+    marginBottom: 20,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
-  info: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: '#555',
-  },
-  actionsContainer: {
-    padding: 15,
-    alignItems: 'center',
-  },
-  actionButton: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 8,
-    width: '90%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
+  sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    color: '#333333',
   },
-  furnitureItem: {
-    marginBottom: 15,
-    width: '100%',
-  },
-  furnitureName: {
+  sectionContent: {
     fontSize: 16,
+    color: '#666666',
+    marginTop: 8,
+  },
+  meubleCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  meubleText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  taskCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  taskText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  voirPlusButton: {
+    alignItems: 'center',
+  },
+  voirPlusText: {
+    fontSize: 16,
+    color: '#1E90FF',
     fontWeight: 'bold',
   },
-  furnitureDescription: {
-    fontSize: 14,
-    color: '#555',
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
   },
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: '#FF6347',
-    padding: 10,
-    borderRadius: 5,
+  footerButton: {
+    backgroundColor: '#1E90FF',
+    borderRadius: 8,
+    padding: 16,
+    flex: 1,
+    marginHorizontal: 10,
+    alignItems: 'center',
   },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  footerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: 'bold',
   },
 });
 
-export default ApartmentDetails;
+export default AppartementDetails;
