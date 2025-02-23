@@ -25,7 +25,6 @@ const ListingsBottomSheet = ({ reservation, onClose }: ReservationBottomSheetPro
     bottomSheetModalRef.current?.present()
   }, [])
   const handleSheetChanges = useCallback((index: number) => {
-    console.log('handleSheetChanges', index)
   }, [])
 
   return (

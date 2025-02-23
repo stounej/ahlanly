@@ -1,384 +1,417 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // For icons
-import { propertiesService, Property, Equipment, Task, BookingSetting, HouseRule } from '@/services';
-import { useLocalSearchParams } from 'expo-router';
+  import React, { useEffect, useRef, useState } from 'react';
+  import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+  import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+  import { propertiesService, Property, Task } from '@/services';
+  import { useLocalSearchParams,  } from 'expo-router';
+  import AddProperty from '../(tabs)/properties/add';
+import usePropertyStore from '@/app/store/addProperty';
+
+  type ChildRef = {
+    handlePresentModalPress: () => void;
+  };
+
+  const AppartementDetails = () => {
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const childRef = useRef<ChildRef>(null);
+    const [step, setStep] = useState(0);
+    const { setProperty, property } = usePropertyStore();
 
 
 
-const AppartementDetails = () => {
-  const params = useLocalSearchParams();
-  const [appartement, setAppartment] = useState<Property>({} as Property);
+    const [appartement, setAppartment] = useState<Property>({
+      equipmentByCategory: {
+        Cuisine: [
+          { id: 1, name: 'Cafetière Nespresso' },
+          { id: 2, name: 'Lave-vaisselle' },
+          { id: 3, name: 'Micro-ondes' }
+        ],
+        Salon: [
+          { id: 4, name: 'TV 4K 55"' },
+          { id: 5, name: 'PS5' },
+          { id: 6, name: 'Canapé convertible' }
+        ]
+      },
+      bookingsetting: [
+        { type: 'Arrivée', value: '15:00' },
+        { type: 'Départ', value: '11:00' },
+        { type: 'Annulation', value: 'Flexible' }
+      ],
+      houserule: [
+        { id: 1, title: 'Pas de fête' },
+        { id: 2, title: 'Non-fumeur' },
+        { id: 3, title: 'Animaux interdits' }
+      ] 
+    });
 
-  useEffect(() => {
-    const fetchProperty = async () => {
-      console.log(params.id);
-      
-      const data = await propertiesService.getById(params.id as string);
-      console.log(data);
-      
-      setAppartment(data);
+    const handleEdit = (s: number) => {
+      if (childRef.current) {
+        childRef.current.handlePresentModalPress();
+      }    
+      setStep(s)
     };
 
-    fetchProperty();
-  }, [params.id]);
+    useEffect(()=>{
+      const fetchData = async () => {
+        const property =  await propertiesService.getById(id)
+        if (property) {
+          const grouped = property.tasks.reduce((acc, task) => {
+            const categoryName = task.task_categories?.name || 'Autre';
+            if (!acc[categoryName]) acc[categoryName] = {name: categoryName, items: []};
+            acc[categoryName].items.push(task as Task);
+            return acc;
+          }, {} as Record<string, Task[]>);
+          console.log(grouped);
+          
+          setAppartment(prev => ({
+            ...prev,
+            ...property,
+            tasksByCategory: Object.values(grouped)
+          }));
 
-  // Render Meuble Item
-  const renderMeuble = ({ item }: { item: Equipment }) => (
-    <View style={styles.meubleCard}>
-      <Text style={styles.meubleText}>{item.name}</Text>
-    </View>
-  );
+          setProperty(
+            {
+              ...property
+            }
+          )
+          
+        }
+      }
+      fetchData()
 
-  // Render Task Item
-  const renderTask = ({ item }: { item: Task }) => (
-    <View style={styles.taskCard}>
-      <Text style={styles.taskText}>{item.title}</Text>
-    </View>
-  );
+    }, [])
+
+
+
+    // Render Section Header
+    const renderSectionHeader = (title: string, onEdit: () => void) => (
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <TouchableOpacity onPress={onEdit}>
+          <MaterialCommunityIcons name="pencil-box" size={29} color="#1E90FF" />
+        </TouchableOpacity>
+      </View>
+    );
+
+    // Render Photo Gallery
+    const renderPhotos = () => (
+      <View style={styles.section}>
+        {renderSectionHeader('Photos', () => handleEdit(5))}
+        <FlatList
+          horizontal
+          data={appartement.property_images}
+          keyExtractor={(_, index) => index.toString()}
+          renderItem={({ item }) => (
+            <Image source={{ uri: item.image_url }} style={styles.photo} />
+          )}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photoContainer}
+        />
+      </View>
+    );
+    const InfoItem = ({ label, value, step }: { label: string; value: any, step:number}) => (
+      <View style={styles.infoItem}>
+        <View>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value || '-'}</Text>
+        </View>
+       { step>=0 && (<TouchableOpacity onPress={() => handleEdit(step)}>
+            <MaterialCommunityIcons name="pencil-box" size={29} color="#1E90FF" />
+          </TouchableOpacity>)}
+  
+      </View>
+    );
+
+    // Render Equipment Category
+    const renderEquipmentCategory = (category: string, items: any[]) => (
+      <View style={styles.categoryContainer} key={category}>
+        <Text style={styles.categoryTitle}>{category}</Text>
+        <View style={styles.equipmentGrid}>
+          {items.map((item, index) => (
+            <View key={index} style={styles.equipmentItem}>
+              <Ionicons name="checkbox-outline" size={18} color="#1E90FF" />
+              <Text style={styles.equipmentText}>{item.name}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
 
     // Render Task Item
-    const renderReservationSetting = ({ item }: { item: BookingSetting   }) => (
-      <View style={styles.taskCard}>
-        <Text style={styles.taskText}>{item.cancellation_policy}</Text>
-      </View>
-    );
-
-     // Render Task Item
-     const renderHouseRule = ({ item }: { item: HouseRule   }) => (
-      <View style={styles.taskCard}>
-        <Text style={styles.taskText}>{item.title}</Text>
-      </View>
-    );
-  return (
-    <View style={styles.container}>
-      {/* Scrollable Content */}
-      <ScrollView style={styles.scrollContainer}>
-        {/* Image */}
-        <Image source={{ uri: appartement.image }} style={styles.image} />
-
-        {/* Title with Icons */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>{appartement.title}</Text>
-          <View style={styles.iconsContainer}>
-            <TouchableOpacity onPress={() => console.log('share pressed')}>
-              <Ionicons name="share" size={24} color="grey" style={styles.icon} />
-            </TouchableOpacity>
-          </View>
+    const renderTaskItem = (item: any) => (
+      <View key={item.id} style={styles.taskItem}>
+        <View style={styles.taskHeader}>
+          <Text style={styles.taskTitle}>{item.title}</Text>
+          <Text style={styles.taskFrequency}>{item.frequency}</Text>
         </View>
+        <Text style={styles.taskCollaborator}>Responsable: {item.collaborator}</Text>
+      </View>
+    );
 
-        {/* Details */}
-        <View style={styles.detailsContainer}>
-          <Text style={styles.city}>{appartement.city}</Text>
-          <Text style={styles.price}>{appartement.price}</Text>
-          <Text style={styles.description}>{appartement.description}</Text>
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Photo Gallery */}
+          {renderPhotos()}
 
-          {/* Availability */}
-          <View style={styles.availabilityContainer}>
-            <View style={styles.availabilityTextContainer}>
-              <Text style={styles.availabilityText}>
-                {appartement.available ? 'Disponible' : 'Non disponible'}
-              </Text>
-              <Text style={styles.availabilityDate}>
-                {appartement.available
-                  ? `Jusqu'au ${appartement.availableUntil}`
-                  : `Disponible à partir du ${appartement.availableUntil}`}
-              </Text>
+          {/* Basic Information Section */}
+          <View style={styles.section}>
+            
+            <View style={styles.infoGrid}>
+              
+              <InfoItem label="Titre" value={appartement.title} step={6}/>
+              <InfoItem label="Description" value={appartement.description} step={7}/>
+              <InfoItem label="Type de bien" value={appartement.property_style} step={1}/>
+              <InfoItem label="Type de location" value={appartement.rent_type} />
+              <InfoItem label="Statut" value={appartement.available ? 'Disponible' : 'Occupé'} />
+              <InfoItem label="Adresse" value={appartement.address} step={2}/>
+              <InfoItem label="Prix/nuit" value={`€${appartement.price}`} step={8}/>
+              <View style={{ 
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  marginVertical: 8
+}}>
+        <View style={{ width: '48%' }}>
+          <InfoItem label="Pièces" value={appartement.number_of_rooms} />
+        </View>
+        <View style={{ width: '48%' }}>
+          <InfoItem label="Lits" value={appartement.number_of_beds} step={3}/>
+        </View>
+        <View style={{ width: '48%' }}>
+          <InfoItem label="Salles de bain" value={appartement.number_of_bathrooms} />
+        </View>
+        <View style={{ width: '48%' }}>
+          <InfoItem label="Voyageurs max" value={appartement.max_guests} />
+        </View>
+      </View>
+              <InfoItem label="Style" value={appartement.property_type} step={0}/>
             </View>
-            <TouchableOpacity style={styles.calendarButton}>
-              <Text style={styles.calendarButtonText}>Afficher Calendrier</Text>
-            </TouchableOpacity>
           </View>
 
-          {/* Number of Rooms */}
-          <Text style={styles.infoText}>Nombre de pièces: {appartement.number_of_rooms}</Text>
-
-          {/* Additional Info */}
-          <Text style={styles.infoText}>Informations supplémentaires: {appartement.additional_info}</Text>
-        </View>
-
-        {/* Meubles Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Meubles ({appartement.equipment?.length})</Text>
-            <TouchableOpacity style={styles.voirPlusButton}>
-              <Text style={styles.voirPlusText}>Voir plus</Text>
-            </TouchableOpacity>
+          {/* Equipments Section */}
+          <View style={styles.section}>
+            {renderSectionHeader('Équipements', () => handleEdit(4))}
+            {Object.entries(appartement.equipmentByCategory).map(([category, items]) => 
+              renderEquipmentCategory(category, items)
+            )}
           </View>
-          <FlatList
-            data={appartement?.equipment?.slice(0, 3)} // Show only 3 items
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderMeuble}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
 
-        {/* Tasks Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tasks ({appartement.task?.length})</Text>
-            <TouchableOpacity style={styles.voirPlusButton}>
-              <Text style={styles.voirPlusText}>Voir plus</Text>
-            </TouchableOpacity>
+          {/* Tasks Section */}
+          <View style={styles.section}>
+            {renderSectionHeader('Tâches', () => handleEdit(9))}
+            {appartement.tasksByCategory?.map((category) => (
+              <View key={category.name} style={styles.categoryContainer}>
+                <Text style={styles.categoryTitle}>{category.name}</Text>
+                {category.items.map(renderTaskItem)}
+
+              </View>
+            ))}
           </View>
-          <FlatList
-            data={appartement.task?.slice(0, 3)} // Show only 3 items
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderTask}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
 
-        {/* Type de logement Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Type de logement</Text>
-          <Text style={styles.sectionContent}>{appartement.type_de_logement}</Text>
-        </View>
-
-        {/* Nombre de voyageurs Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nombre de voyageurs</Text>
-          <Text style={styles.sectionContent}>{appartement.nombre_de_voyageurs} voyageurs</Text>
-        </View>
-
-        {/* Emplacement Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Emplacement</Text>
-          <Text style={styles.sectionContent}>{appartement.emplacement}</Text>
-        </View>
-
-        {/* Paramètres de réservation Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Paramètres de réservation ({appartement.bookingsetting?.length})</Text>
-            <TouchableOpacity style={styles.voirPlusButton}>
-              <Text style={styles.voirPlusText}>Voir plus</Text>
-            </TouchableOpacity>
+          {/* Booking Settings */}
+          <View style={styles.section}>
+            {renderSectionHeader('Paramètres Réservation', () => console.log('Edit Booking'))}
+            <View style={styles.bookingSettings}>
+              {appartement.bookingsetting?.map((setting, index) => (
+                <View key={index} style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>{setting.type}:</Text>
+                  <Text style={styles.settingValue}>{setting.value}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-          <FlatList
-            data={appartement.bookingsetting?.slice(0, 3)} // Show only 3 items
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderReservationSetting}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-       
 
-        {/* Règlement intérieur Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Règlement intérieur ({appartement.houserule?.length})</Text>
-            <TouchableOpacity style={styles.voirPlusButton}>
-              <Text style={styles.voirPlusText}>Voir plus</Text>
-            </TouchableOpacity>
+          {/* House Rules */}
+          <View style={styles.section}>
+            {renderSectionHeader('Règlement Intérieur', () => console.log('Edit Rules'))}
+            <View style={styles.rulesContainer}>
+              {appartement.houserule?.map((rule, index) => (
+                <View key={index} style={styles.ruleItem}>
+                  <Ionicons name="alert-circle" size={18} color="#FF6B6B" />
+                  <Text style={styles.ruleText}>{rule.title}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-          <FlatList
-            data={appartement.houserule?.slice(0, 3)} // Show only 3 items
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={renderHouseRule}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
+        </ScrollView>
+
+        {/* Fixed Footer */}
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={styles.footerButton}
+            onPress={() => console.log('Bloquer une date')}
+          >
+            <Text style={styles.footerButtonText}>Bloquer une date</Text>
+          </TouchableOpacity>
         </View>
-       
-
-        {/* Conditions d'annulation Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Conditions d'annulation</Text>
-          <Text style={styles.sectionContent}>{appartement.conditionsAnnulation}</Text>
-        </View>
-
-        <View style={styles.iconsContainer}>
-            <TouchableOpacity onPress={() => console.log('share pressed')}>
-              <Ionicons name="trash" size={24} color="red" style={styles.icon} />
-              <Text>Supprimer</Text>
-            </TouchableOpacity>
-          </View>
-      </ScrollView>
-
-      
-
-      {/* Fixed Footer */}
-      <View style={[styles.footer, { gap: 150 }]}>
-        <TouchableOpacity onPress={() => console.log('Modifier pressed')}>
-          <Ionicons name="pencil" size={24} color="#1E90FF" style={styles.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerButtonText}>Bloquer une date</Text>
-        </TouchableOpacity>
+        <AddProperty ref={childRef} step={step} isEdit={true}/>
       </View>
-    </View>
-  );
-};
+    );
+  };
+
+ 
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  image: {
-    width: '100%',
-    height: 250,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  iconsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  icon: {
-    marginLeft: 8,
-  },
-  detailsContainer: {
-    padding: 16,
-  },
-  city: {
-    fontSize: 18,
-    color: '#666666',
-    marginBottom: 8,
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1E90FF',
-    marginBottom: 16,
-  },
-  description: {
-    fontSize: 16,
-    color: '#333333',
-    marginBottom: 16,
-  },
-  availabilityContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  availabilityTextContainer: {
-    flex: 1,
-  },
-  availabilityText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  availabilityDate: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  calendarButton: {
-    backgroundColor: '#1E90FF',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
-  },
-  calendarButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#333333',
-    marginBottom: 8,
+  scrollContent: {
+    paddingBottom: 100,
   },
   section: {
-    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 8,
     paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: '700',
+    color: '#2D2D2D',
   },
-  sectionContent: {
-    fontSize: 16,
-    color: '#666666',
-    marginTop: 8,
+  photoContainer: {
+    paddingVertical: 16,
   },
-  meubleCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  photo: {
+    width: 280,
+    height: 200,
+    borderRadius: 12,
+    marginRight: 16,
+    resizeMode: 'cover',
   },
-  meubleText: {
-    fontSize: 16,
-    color: '#333333',
+  infoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  taskCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  taskText: {
-    fontSize: 16,
-    color: '#333333',
-  },
-  voirPlusButton: {
-    alignItems: 'center',
-  },
-  voirPlusText: {
-    fontSize: 16,
-    color: '#1E90FF',
-    fontWeight: 'bold',
-  },
-  footer: {
+  infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    width: '100%'
+
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  categoryContainer: {
+    marginVertical: 12,
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  equipmentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  equipmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    minWidth: '45%',
+  },
+  equipmentText: {
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  taskItem: {
+    backgroundColor: '#F8FAFC',
     padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1F2937',
+  },
+  taskFrequency: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  taskCollaborator: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  bookingSettings: {
+    gap: 12,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#4B5563',
+  },
+  settingValue: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  rulesContainer: {
+    gap: 12,
+  },
+  ruleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ruleText: {
+    fontSize: 16,
+    color: '#4B5563',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#F0F0F0',
   },
   footerButton: {
     backgroundColor: '#1E90FF',
     borderRadius: 8,
-    padding: 16,
-    flex: 1,
-    marginHorizontal: 10,
+    padding: 18,
     alignItems: 'center',
   },
   footerButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -2,9 +2,9 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path, G, ClipPath, Rect, Defs } from "react-native-svg";
 
-const Hotel = () => {
+const Hotel = ({onPressB, isSelected}) => {
   return (
-    <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+    <TouchableOpacity onPress={onPressB} style={[styles.button, isSelected && styles.selectedButton]} activeOpacity={0.8}>
       <View style={styles.svgContainer}>
         <Svg
           viewBox="0 0 45 45"
@@ -35,18 +35,30 @@ d=" M12,-14 C13.053999900817871,-14 13.918000221252441,-13.184000015258789 13.99
 
 const styles = StyleSheet.create({
   button: {
+    width: '42%',
 
-    width: "48%",
-
-    alignItems: "center",
-    paddingVertical: 10,
-    backgroundColor: "#f9f9f9",
+    margin: 10,
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
     borderRadius: 10,
-    elevation: 2,
-    marginVertical: 5,
+    backgroundColor: '#f9f9f9',
+    
+  },
+  selectedButton: {
+    backgroundColor: '#e0f7fa', // Couleur de fond différente pour les éléments sélectionnés
+    borderColor: '#007BFF',
+  },
+  buttonText: {
+    marginTop: 5,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
   },
   svgContainer: {
     marginBottom: 8,
+    justifyContent: 'center'
   },
   title: {
     fontSize: 14,
@@ -54,5 +66,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
 
 export default Hotel;

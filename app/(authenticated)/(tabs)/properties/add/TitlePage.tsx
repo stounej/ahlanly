@@ -1,40 +1,38 @@
+import usePropertyStore from '@/app/store/addProperty';
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 
-const DescriptionPage = ({ onPrev, onNext }) => {
-  const [description, setDescription] = useState('');
-  const [remainingChars, setRemainingChars] = useState(500);
+interface TitlePageProps {
+  onPrev: () => void;
+  onNext: () => void;
+}
 
-  const handleDescriptionChange = (text) => {
-    setDescription(text);
-    setRemainingChars(500 - text.length);
-  };
+const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext }) => {
+  const {setProperty, property} = usePropertyStore()
+  const [title, setTitle] = useState(property?.title);
 
-  const handleSubmit = () => {
-    // Vous pouvez ajouter ici le code pour envoyer la description
-    console.log('Description:', description);
-  };
+  const handleNextButton = () => {
+    setProperty({title})
+    onNext()
+  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Text style={styles.title}>Créez votre description</Text>
+      <Text style={styles.title}>À présent, donnez un titre à votre annonce</Text>
       <Text style={styles.subtitle}>
-        Racontez ce qui rend votre logement unique.
+        Les titres courts sont généralement les plus efficaces. Ne vous inquiétez pas, vous pourrez toujours le modifier plus tard.
       </Text>
 
-      {/* Scrollable Content for Description Input */}
+      {/* Scrollable Content for Title Input */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TextInput
           style={styles.input}
+          placeholder="Saisissez le titre de votre annonce"
+          value={title}
+          onChangeText={setTitle}
           multiline
-          numberOfLines={6}
-          maxLength={500}
-          placeholder="Détendez-vous, vous ne manquerez pas de place dans ce logement spacieux."
-          value={description}
-          onChangeText={handleDescriptionChange}
         />
-        <Text style={styles.counter}>{remainingChars} caractères restants</Text>
       </ScrollView>
 
       {/* Footer with Navigation Buttons */}
@@ -42,7 +40,7 @@ const DescriptionPage = ({ onPrev, onNext }) => {
         <TouchableOpacity onPress={onPrev} style={styles.navButton}>
           <Text style={styles.navButtonText}>Retour</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => description ? onNext() : null} style={[styles.nextButton, !description && styles.disabledNextButton]}>
+        <TouchableOpacity onPress={() => title ? handleNextButton() : null} style={[styles.nextButton, !title && styles.disabledNextButton]}>
           <Text style={styles.nextButtonText}>Suivant</Text>
         </TouchableOpacity>
       </View>
@@ -57,13 +55,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
     color: '#555',
     marginBottom: 20,
@@ -74,20 +72,14 @@ const styles = StyleSheet.create({
     paddingBottom: 80 + 16, // Ajuster cet espace pour éviter que le footer masque le contenu
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    borderRadius: 10,
     fontSize: 16,
-    minHeight: 120,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 15,
     textAlignVertical: 'top',
+    minHeight: 100,
     backgroundColor: '#f9f9f9',
-  },
-  counter: {
-    marginTop: 10,
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'right',
   },
   footer: {
     flexDirection: 'row',
@@ -130,4 +122,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DescriptionPage;
+export default TitlePage;

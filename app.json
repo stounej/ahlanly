@@ -24,6 +24,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Autoriser l'accès au calendrier",
+          "contactsPermission": "Autoriser l'accès aux contacts"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -42,6 +55,7 @@
       ],
       "react-native-bottom-tabs",
       "expo-build-properties"
+      // "react-native-reanimated/plugin"
     ],
     "experiments": {
       "typedRoutes": true

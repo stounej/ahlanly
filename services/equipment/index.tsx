@@ -1,6 +1,11 @@
 import supabase from '../../supabaseClient';
 
-
+export interface EquipmentCategory {
+  id: string;
+  name: string;
+  description?: string;
+  created_at: Date;
+}
 // Interface pour Equipment
 export interface Equipment {
   id: string;
@@ -17,13 +22,15 @@ export interface Equipment {
   contactPhone?: string;
   maintenanceSchedule?: string;
   locationInProperty?: string;
+  equipment_categories: EquipmentCategory
   createdAt?: string;
   updatedAt?: string;
+  icon?: string
 }
 
 export const equipmentService = {
   getAll: async () => {
-    const { data, error } = await supabase.from('equipment').select('*');
+    const { data, error } = await supabase.from('equipment').select('*, equipment_categories(*)');
     if (error) throw error;
     return data as Equipment[];
   },

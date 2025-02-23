@@ -1,150 +1,168 @@
 import { Colors } from '@/constants/Colors';
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useOAuth } from '@clerk/clerk-expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking'
+import AuthModal from './loginModal';
+import  supabase from '../supabaseClient'; // Assurez-vous d'avoir configuré Supabase
+import { Session } from '@supabase/supabase-js';
 
+const { width } = Dimensions.get('window');
+type ChildRef = {
+  handlePresentModalPress: () => void;
+};
 const LoginScreen = () => {
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_apple' });
-  const { startOAuthFlow: googleAuth } = useOAuth({ strategy: 'oauth_google' });
+
+  // const { startOAuthFlow } = useOAuth({ strategy: 'oauth_apple' });
+  // const { startOAuthFlow: googleAuth } = useOAuth({ strategy: 'oauth_google' });
   const { top } = useSafeAreaInsets();
-
-  const handleAppleLogin =  React.useCallback(async () => {
-    try {
-      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow(
-        { redirectUrl: 
-          Linking.createURL('/(authenticated)/(tabs)/dashboard', 
-            { scheme: 'com.oeddahri.ahlanly' }),}
-      );
-
-      if (createdSessionId) {
-        setActive!({ session: createdSessionId });
-      }
-    } catch (err) {
-      console.error('OAuth error', err);
+  const childRef = useRef<ChildRef>(null);
+  const handlePress = () => {
+    if (childRef.current) {      
+      childRef.current.handlePresentModalPress();
     }
-  }, []);
-
-  const handleGoogleLogin = React.useCallback(async () => {
-    try {
-      const { createdSessionId, signIn, signUp, setActive } = await googleAuth(
-        { redirectUrl: 
-          Linking.createURL('/(authenticated)/(tabs)/dashboard', 
-            { scheme: 'com.oeddahri.ahlanly' }),}
-      );
-
-      if (createdSessionId) {
-        setActive!({ session: createdSessionId });
-      }
-    } catch (err) {
-      console.error('OAuth error', err);
-    }
-  }, []);
+  };
 
   const openLink = async () => {
     WebBrowser.openBrowserAsync('https://google.com');
   };
 
   return (
-    
     <View style={[styles.container, { paddingTop: top }]}>
-      <Image source={require('@/assets/images/icn.jpeg')} style={styles.loginImage} />
-      <Image source={require('@/assets/images/login1.jpeg')} style={styles.banner} />
-      <Text style={styles.title}>L'hospitalité simplifiée, la gestion optimisée.</Text>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.btn]} onPress={handleAppleLogin}>
-          <Ionicons name="logo-apple" size={24} />
-          <Text style={[styles.btnText]}>Continue with Apple</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.btn]} onPress={handleGoogleLogin}>
-          <Ionicons name="logo-google" size={24} />
-          <Text style={[styles.btnText]}>Continue with Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.btn]} onPress={handleAppleLogin}>
-          <Ionicons name="logo-apple" size={24} />
-          <Text style={[styles.btnText]}>Continue with Email</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.description}>
-          By continuing you agree to Todoist's{' '}
-          <Text style={styles.link} onPress={openLink}>
-            Terms of Service
-          </Text>{' '}
-          and{' '}
-          <Text style={styles.link} onPress={openLink}>
-            Privacy Policy
-          </Text>
-          .
+      <Image 
+        source={require('@/assets/images/login1.jpeg')} 
+        style={styles.backgroundImage}
+        blurRadius={1}
+      />
+      
+      {/* Titre en haut */}
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          L'hospitalité simplifiée,{'\n'} 
+          la gestion optimisée.
         </Text>
       </View>
+
+      {/* Boutons et texte légal en bas */}
+      <View style={styles.footer}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.button, styles.appleButton]}
+          >
+            <Ionicons name="logo-apple" size={20} color="white" />
+            <Text style={[styles.buttonText, styles.whiteText]}>Continuer avec Apple</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.button, styles.googleButton]}
+          >
+            <Ionicons name="logo-google" size={20} color="white" />
+            <Text style={[styles.buttonText, styles.whiteText]}>Continuer avec Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.button, styles.emailButton]}
+            onPress={() => handlePress()}
+          >
+            <Ionicons name="mail" size={20} color="white"  />
+            <Text style={[styles.buttonText, styles.whiteText]}>Continuer avec Email</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.legalText}>
+          En continuant, vous acceptez nos{' '}
+          <Text style={styles.link} onPress={openLink}>
+            Conditions
+          </Text>{' '}
+          et notre{' '}
+          <Text style={styles.link} onPress={openLink}>
+            Confidentialité
+          </Text>
+        </Text>
+
+      </View>
+      <AuthModal ref={childRef}/>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: 40,
-    flex: 1, // Assurez-vous que le conteneur prend toute la hauteur de l'écran
-    position: 'relative',
-
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    
   },
-  loginImage: {
-    height: 40,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    zIndex: 1
-  },
-  banner: {
-    position: 'absolute', // Positionné derrière tout le contenu
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
-    height: '100%', // L'image de fond occupe tout l'espace
-    resizeMode: 'cover', // 
+    height: '100%',
+    opacity: 0.8,
+  },
+  header: {
+    marginTop: 80,
+    paddingHorizontal: 24,
+    alignItems: 'center',
   },
   title: {
-    marginHorizontal: 50,
-    fontSize: 25,
-    fontWeight: 'bold',
+    fontSize: 30,
+    fontWeight: '600',
+    color: 'black',
     textAlign: 'center',
+    lineHeight: 32,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    width: '100%',
+    paddingHorizontal: 24,
   },
   buttonContainer: {
-    top: '45%',
-    gap: 20,
-    marginHorizontal: 40,
+    width: '100%',
+    gap: 16,
+    marginBottom: 18,
+    alignItems: 'center',
   },
-  btn: {
+  button: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 6,
-    gap: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderColor: Colors.midnightOcean,
-    borderWidth: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.sandBeige
+    borderRadius: 30,
+    width: width * 0.8,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.7,
+    shadowRadius: 4,
+    elevation: 3,
+    paddingVertical: 18
   },
-  btnText: {
-    fontSize: 20,
+  appleButton: {
+    backgroundColor: '#000',
+  },
+  googleButton: {
+    backgroundColor: '#DB4437',
+  },
+  emailButton: {
+    backgroundColor: Colors.oceanBlue,
+  },
+  buttonText: {
+    fontSize: 16,
     fontWeight: '500',
   },
-  description: {
-    fontSize: 12,
+  whiteText: {
+    color: 'white',
+  },
+  legalText: {
     textAlign: 'center',
-    color: Colors.midnightOcean,
+    fontSize: 12,
+    color: 'black',
+    paddingHorizontal: 30,
+    lineHeight: 18,
   },
   link: {
     color: Colors.oceanBlue,
-    fontSize: 12,
-    textAlign: 'center',
     textDecorationLine: 'underline',
   },
 });

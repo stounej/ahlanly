@@ -1,6 +1,6 @@
 import supabase from '../../supabaseClient';
 
-interface Reservation {
+export interface Reservation {
   id: string;
   guest: string;
   property: string;

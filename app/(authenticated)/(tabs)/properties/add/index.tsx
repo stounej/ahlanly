@@ -1,63 +1,64 @@
-import React, { useCallback, useRef, useState , forwardRef, useImperativeHandle} from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import React, { useCallback, useRef, useState , forwardRef, useImperativeHandle, useEffect} from "react";
+import { View, StyleSheet } from "react-native";
 import  { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
-import MaisonButton from "@/app/buttons/properties/maison";
-import AppartementButton from "@/app/buttons/properties/appartment";
-import ChambreButton from "@/app/buttons/properties/chambrehote";
-import Cabane from "@/app/buttons/properties/cabane";
-import Caravane from "@/app/buttons/properties/caravane";
-import Ferme from "@/app/buttons/properties/Ferme";
-import Tente from "@/app/buttons/properties/tente";
-import Hotel from "@/app/buttons/properties/hotel";
-import Riad from "@/app/buttons/properties/riad";
-import AddStep1 from "./add1";
-import ConfirmAddress from "./add2";
-import PropertyDetails from "./add3";
-import EquipmentsPage from "./Add4";
-import PhotosPage from "./Add5";
-import AddTitlePage from "./Add6";
-import DescriptionPage from "./Add7";
-import PricePage from "./add8";
-import DiscountsPage from "./add9";
-import SecurityInfoPage from "./add10";
-import ChooseType from "./add0";
-import TasksPage from "./add9";
+import ChooseStyle from "./ChooseStyle";
+import ConfirmAddress from "./ConfirmAddress";
+import PropertyDetails from "./PropertyDetails";
+import EquipmentsPage from "./EquipmentsPage";
+import PhotosPage from "./PhotosPage";
+import AddTitlePage from "./TitlePage";
+import DescriptionPage from "./DescriptionPage";
+import PricePage from "./PricePage";
+import ChooseType from "./ChooseType";
+import TasksPage from "./TasksPage";
+import usePropertyStore from "@/app/store/addProperty";
+import { propertiesService } from "@/services";
+import ImportOptionsScreen from "./add";
 
 const AddProperty = forwardRef((props, ref) => {
-  const [step, setStep] = useState(0); // Étape actuelle
+  const [step, setStep] = useState( -1); // Étape actuelle
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const {property} = usePropertyStore()
 
-  const [formData, setFormData] = useState({
-    propertyName: "",
-    propertyAddress: "",
-    ownerName: "",
-    contactNumber: "",
-  });
-
-  const nextStep = () => {
-    if (step < 10) {
+  const nextStep = async () => {
+    if (step < 9) {
       setStep(step + 1);
-    } else {
-      console.log("Données finales : ", formData);
-      // Traitez les données finales ici (exemple : appel API)
+    } else {      // Traitez les données finales ici (exemple : appel API)
+      await propertiesService.create({...property})
+      
     }
   };
 
+  useEffect(()=> {
+    setStep(props.step)
+
+  }, [props.step])
+
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef.current?.present()
+  }, [])
+
+  const handleCloseModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.close()
   }, [])
 
   useImperativeHandle(ref, () => ({
     handlePresentModalPress,
   }));
   const prevStep = () => {
-    if (step > 0) {
+    if (step > -1) {
       setStep(step - 1);
     }
   };
           
   const renderContent = () => {
     switch (step) {
+      case -1:
+        return (
+          <View style={styles.content}>
+           <ImportOptionsScreen setStep={(s:number)=> setStep(s)}/>
+          </View>
+        );
       case 0:
         return (
           <View style={styles.content}>
@@ -67,7 +68,7 @@ const AddProperty = forwardRef((props, ref) => {
       case 1:
         return (
           <View style={styles.content}>
-            <AddStep1  onNext={nextStep} onPrev={prevStep}/>
+            <ChooseStyle  onNext={nextStep} onPrev={prevStep}/>
           </View>
         );
       case 2:
@@ -91,7 +92,10 @@ const AddProperty = forwardRef((props, ref) => {
         case 5:
         return (
           <View style={styles.content}>
-            <PhotosPage onNext={nextStep} onPrev={prevStep}/>
+            <PhotosPage onNext={nextStep}
+             onPrev={prevStep}
+              isEdit={props.isEdit}
+              onClose={handleCloseModalPress}/>
           </View>
         );
         case 6:
@@ -118,20 +122,12 @@ const AddProperty = forwardRef((props, ref) => {
             <TasksPage onNext={nextStep} onPrev={prevStep}/>
           </View>
         );
-        case 10:
-        return (
-          <View style={styles.content}>
-            <SecurityInfoPage />
-            <Button title="Suivant" onPress={()=> bottomSheetModalRef.current?.close()} />
-          </View>
-        );
       default:
         return null;
     }
   };
 
   return (
-    <View style={styles.container}>
       <BottomSheetModal
         index={1} // Fermer par défaut
         snapPoints={["50%", "98%"]}
@@ -141,7 +137,6 @@ const AddProperty = forwardRef((props, ref) => {
         {renderContent()}
         </BottomSheetView>
       </BottomSheetModal>
-    </View>
   );
 });
 
@@ -149,15 +144,20 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         alignItems: 'center',
+        width: '100%'
       },
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    width: '100%'
+
   },
   content: {
     flex: 1,
     padding: 20,
+    width: '100%'
+
   },
   input: {
     borderWidth: 1,

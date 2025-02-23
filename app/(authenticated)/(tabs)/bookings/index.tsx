@@ -10,7 +10,6 @@ const Reservations = () => {
     const fetchBookings = async () => {
       const props = await bookingsService.getAll();     
       setReservations(props);
-      console.log(props);
       
     };
 
