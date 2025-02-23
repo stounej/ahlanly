@@ -1,30 +1,20 @@
 import React, { useCallback, useRef, useState , forwardRef, useImperativeHandle} from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import  { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
-import MaisonButton from "@/app/buttons/properties/maison";
-import AppartementButton from "@/app/buttons/properties/appartment";
-import ChambreButton from "@/app/buttons/properties/chambrehote";
-import Cabane from "@/app/buttons/properties/cabane";
-import Caravane from "@/app/buttons/properties/caravane";
-import Ferme from "@/app/buttons/properties/Ferme";
-import Tente from "@/app/buttons/properties/tente";
-import Hotel from "@/app/buttons/properties/hotel";
-import Riad from "@/app/buttons/properties/riad";
-import AddStep1 from "./add1";
-import ConfirmAddress from "./add2";
-import PropertyDetails from "./add3";
-import EquipmentsPage from "./Add4";
-import PhotosPage from "./Add5";
-import AddTitlePage from "./Add6";
-import DescriptionPage from "./Add7";
-import PricePage from "./add8";
-import DiscountsPage from "./add9";
-import SecurityInfoPage from "./add10";
 import ShowTasks from "./add1";
 import AddTaskScreen from "./add2";
 
-const ManageTasks = forwardRef((props, ref) => {
-  const [step, setStep] = useState(0); // Étape actuelle
+interface ChildRef {
+  handlePresentModalPress: () => void; // Define the methods you want to expose
+}
+
+interface ManageTasksProps {
+  step: number;
+  hideAppartment?: boolean; // Optional if not always provided
+}
+
+const ManageTasks = forwardRef<ChildRef, ManageTasksProps>(({ step, hideAppartment }, ref) => {
+  const [currentStep, setStep] = useState(step ?? 0); // Current step
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
   const [formData, setFormData] = useState({
@@ -35,11 +25,10 @@ const ManageTasks = forwardRef((props, ref) => {
   });
 
   const nextStep = () => {
-    if (step < 10) {
-      setStep(step + 1);
+    if (currentStep < 10) {
+      setStep(currentStep + 1);
     } else {
-      console.log("Données finales : ", formData);
-      // Traitez les données finales ici (exemple : appel API)
+      // Handle final data processing here (e.g., API call)
     }
   };
 
@@ -51,86 +40,24 @@ const ManageTasks = forwardRef((props, ref) => {
     handlePresentModalPress,
   }));
   const prevStep = () => {
-    if (step > 0) {
-      setStep(step - 1);
+    if (currentStep > 0) {
+      setStep(currentStep - 1);
     }
   };
           
   const renderContent = () => {
-    switch (step) {
+    switch (currentStep) {
       case 0:
         return (
           <View style={styles.content}>
-                    <ShowTasks/>
-                        <Button title="Ajouter une tâche" onPress={nextStep} />
+              <ShowTasks selectedCateg={hideAppartment}/>
           </View>
 
         );
       case 1:
         return (
           <View style={styles.content}>
-            <AddTaskScreen  onNext={nextStep}/>
-          </View>
-        );
-      case 2:
-        return (
-          <View style={styles.content}>
-            <ConfirmAddress onNext={nextStep}/>
-          </View>
-        );
-        case 3:
-          return (
-            <View style={styles.content}>
-              <PropertyDetails onNext={nextStep}/>
-            </View>
-          );
-        case 4:
-          return (
-            <View style={styles.content}>
-              <EquipmentsPage />
-              <Button title="Suivant" onPress={nextStep} />
-            </View>
-          );
-        case 5:
-        return (
-          <View style={styles.content}>
-            <PhotosPage />
-            <Button title="Suivant" onPress={nextStep} />
-          </View>
-        );
-        case 6:
-        return (
-          <View style={styles.content}>
-            <AddTitlePage />
-            <Button title="Suivant" onPress={nextStep} />
-          </View>
-        );
-        case 7:
-        return (
-          <View style={styles.content}>
-            <DescriptionPage />
-            <Button title="Suivant" onPress={nextStep} />
-          </View>
-        );
-        case 8:
-          return (
-            <View style={styles.content}>
-              <PricePage />
-              <Button title="Suivant" onPress={nextStep} />
-            </View>
-          );
-        case 9:
-        return (
-          <View style={styles.content}>
-            <DiscountsPage />
-            <Button title="Suivant" onPress={nextStep} />
-          </View>
-        );
-        case 10:
-        return (
-          <View style={styles.content}>
-            <SecurityInfoPage />
-            <Button title="Suivant" onPress={()=> bottomSheetModalRef.current?.close()} />
+            <AddTaskScreen  hideAppartment={hideAppartment}/>
           </View>
         );
       default:
@@ -144,7 +71,7 @@ const ManageTasks = forwardRef((props, ref) => {
         index={1} // Fermer par défaut
         snapPoints={["50%", "98%"]}
         ref={bottomSheetModalRef}
-        onChange={()=>{setStep(0)}}
+        // onChange={()=>{setStep(0)}}
       >
          <BottomSheetView  style={styles.contentContainer}>
         {renderContent()}
@@ -159,17 +86,19 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         alignItems: 'center',
+        
       },
   container: {
     flex: 1,
     width: '100%',
     justifyContent: "center",
     alignItems: "center",
+
+
   },
   content: {
     flex: 1,
-    padding: 20,
-    width: '100%'
+    width: '100%',
   },
   input: {
     borderWidth: 1,

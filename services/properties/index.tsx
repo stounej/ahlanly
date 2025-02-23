@@ -5,62 +5,230 @@ import { Equipment } from '../equipment';
 import { HouseRule } from '../houserules';
 import { Review } from '../reviews';
 import { Task } from '../tasks';
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
-interface Property {
+export enum RentType {
+  NIGHT = 'night',
+  MONTHLY = 'monthly'
+}
+
+export enum PropertyStyle {
+  PRIVATE_ROOM = 'private_room',
+  ENTIRE_PROPERTY = 'entire_property',
+  HOSTEL = 'hostel'
+}
+
+export interface Property {
   id: string;
   title: string;
   description: string;
-  image: string;
   available: boolean;
   city: string;
-  price: string;
+  price: number;
+  address: string;
+  country: string;
+  zip_code: string;
+  address_complement?: string;
   number_of_rooms: number;
-  additional_info: string;
-  type_de_logement: string;
-  nombre_de_voyageurs: number;
-  emplacement: string;
+  number_of_beds: number;
+  number_of_bathrooms: number;
+  max_guests: number;
+  additional_info?: string;
+  property_type?: string;
+  rent_type: RentType;
+  property_style: PropertyStyle;
+  created_at: Date;
+  updated_at: Date;
   bookingsetting: BookingSetting[];
   houserule: HouseRule[];
-  conditionsAnnulation: string;
-  bookings_this_month: number;
-  task: Task[];
+  tasks: Task[];
   review: Review;
-  calendarEvent: CalendarEvent;
-  availableUntil: string;
   equipment: Equipment[]
-  
+  calendarEvent: CalendarEvent;
+  property_images: any[]
 }
-
-export type { Property };
 
 export const propertiesService = {
   getAll: async () => {    
-    let { data, error } = await supabase.from('property').select('*, task(*), review(*)');
+    let { data, error } = await supabase.from('properties').select('*, tasks(*, task_categories(*)), property_images(*)');
     if (error) throw error; 
+    
+   
+    return data as Property[];
+  },
+  getJustProperties: async () => {    
+    let { data, error } = await supabase.from('properties').select('id, title, city, property_images(image_url, id, path)');
+
+    if (error) throw error; 
+    
    
     return data as Property[];
   },
 
   getById: async (id: string) => {
     const { data, error } = await supabase
-      .from('property')
-      .select('*, task(*), review(*), houserule(*), bookingsetting(*), equipment(*)')
+      .from('properties')
+      .select('*, property_images(id, image_url, path), tasks(id, property_id, title, description, due_date, recurrence, status, auto_after, auto_before,\
+         task_categories(name, icon_library, icon_name))')
       .eq('id', id)
-      .single();
-      console.log(data);
-      console.log(error);
-
+      .single();      
       
     if (error) throw error;
     return data as Property;
   },
 
-  create: async (newProperty: Omit<Property, 'id'>) => {
-    const { data, error } = await supabase
-      .from('properties')
-      .insert([newProperty])
-      .select();
-    if (error) throw error;
-    return data[0] as Property;
+    create: async (newProperty: Omit<Property, 'id'>) => {
+      const {property_images, equipment, tasks, ...filtered_properties} = newProperty
+      try {
+        // Compression et upload des images
+        const compressedImageUris = await Promise.all(
+          property_images.map(async (img) => {
+            // Compression de l'image
+           
+            const compressedImage = await manipulateAsync(
+              img.uri,
+              [{ resize: { width: 1080 } }], // Redimensionnement tout en gardant le ratio
+              { compress: 0.8, format: SaveFormat.JPEG } // Compression à 80% qualité
+            ); 
+            
+            // Génération d'un nom de fichier unique
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const arraybuffer = await fetch(compressedImage.uri).then((res) => res.arrayBuffer())
+
+            // Upload vers Supabase Storage
+            const { data: storageData, error: storageError } = await supabase.storage
+              .from('ahlanly_public')
+              .upload(fileName, arraybuffer,
+                {
+                  contentType: 'image/jpeg',
+                }
+              );
+              
+            if (storageError) throw storageError;
+
+            // Récupération du lien public
+            const { data: { publicUrl } } = supabase.storage
+              .from('ahlanly_public')
+              .getPublicUrl(storageData.path);
+            return {publicUrl, path: storageData.path};
+          })
+        );
+      const { data: propertyData, error: propertyError} = await supabase
+        .from('properties')
+        .insert([filtered_properties])
+        .select();
+      if (propertyError) throw propertyError;  
+      
+      const { data: imagesData, error: imageError } = await supabase
+        .from('property_images')
+        .insert(compressedImageUris.map((uri) => ({
+          property_id: propertyData[0].id,
+          image_url: uri, 
+          path: uri.path
+        })))
+        .select();
+
+      if (imageError) throw imageError;
+      
+      return propertyData[0] as Property;
+    } catch (error) {
+      console.error('Error creating property:', error);
+      throw error;
+    }
+    },
+
+
+   updateImages: async (propertyId, images) => {
+
+    const addedImages = images.addedImages
+    const deletedImages = images.deletedImages
+    
+
+    try{
+       // Compression et upload des images
+
+       if(addedImages.length > 0){
+       const compressedImageUris = await Promise.all(
+        addedImages.map(async (img) => {
+          // Compression de l'image
+         
+          const compressedImage = await manipulateAsync(
+            img.image_url,
+            [{ resize: { width: 1080 } }], // Redimensionnement tout en gardant le ratio
+            { compress: 0.8, format: SaveFormat.JPEG } // Compression à 80% qualité
+          ); 
+// Génération d'un nom de fichier unique
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const arraybuffer = await fetch(compressedImage.uri).then((res) => res.arrayBuffer())
+
+          // Upload vers Supabase Storage
+          const { data: storageData, error: storageError } = await supabase.storage
+            .from('ahlanly_public')
+            .upload(fileName, arraybuffer,
+              {
+                contentType: 'image/jpeg',
+              }
+            );
+            
+          if (storageError) throw storageError;
+
+          // Récupération du lien public
+          const { data: { publicUrl } } = supabase.storage
+            .from('ahlanly_public')
+            .getPublicUrl(storageData.path);
+          return {publicUrl, path: storageData.path};
+        })
+      );
+      
+      const { data: imagesData, error: imageError } = await supabase
+        .from('property_images')
+        .insert(compressedImageUris.map((uri) => ({
+          property_id: propertyId,
+          image_url: uri.publicUrl,
+          path: uri.path
+        })))
+        .select();
+
+      if (imageError) throw imageError;
+
+    }
+
+  
+    if(deletedImages.length > 0){
+      console.log('deletedImages---------------------');
+
+      console.log(deletedImages);
+      
+ 
+      const { data, error } = await supabase
+      .storage
+      .from('ahlanly_public')
+      .remove(['1739827466606_ttd0f6.jpg']);
+
+      console.log(data);
+      console.log(error);
+
+      
+
+
+        // const { data: imagesData, error: imageError } = await supabase
+        // .from('property_images')
+        // .delete(deletedImages.map((uri) => ({
+        //   image_url: uri
+        // })))
+        // .eq('property_id',propertyId )
+        // .select();
+
+        // console.log(imageError);
+        
+       
+        
   }
-}; 
+    }
+    catch(err){
+      console.log(err); 
+    }
+
+    }
+
+  }; 

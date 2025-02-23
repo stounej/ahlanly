@@ -9,11 +9,20 @@ import supabase from '../../supabaseClient';
     role: 'owner' | 'manager' | 'staff';
     created_at: string;
     last_sign_in_at?: string;
+    rating: number,
+    is_active: boolean,
+    date_of_birth: Date,
+    country: string,
+    postal_code: string,
+    city: string,
+    address: string,
+    
+
   }
 
 export type { User };
 
-export const usersService = {
+export const UsersService = {
   getAll: async () => {
     const { data, error } = await supabase.from('users').select('*');
     if (error) throw error;
@@ -22,7 +31,7 @@ export const usersService = {
 
   getById: async (id: string) => {
     const { data, error } = await supabase
-      .from('users')
+      .from('Users')
       .select('*')
       .eq('id', id)
       .single();
@@ -32,7 +41,7 @@ export const usersService = {
 
   create: async (newUser: Omit<User, 'id' | 'created_at' | 'last_sign_in_at'>) => {
     const { data, error } = await supabase
-      .from('users')
+      .from('Users')
       .insert([newUser])
       .select();
     if (error) throw error;
@@ -40,8 +49,8 @@ export const usersService = {
   },
 
   getCurrentUser: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { User }, error } = await supabase.auth.getUser();
     if (error) throw error;
-    return user;
+    return User;
   }
 }; 

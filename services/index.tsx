@@ -1,4 +1,3 @@
-export { amenitiesService } from './amenities';
 export { bookingsService } from './bookings';
 export { bookingsettingsService } from './bookingsettings';
 export { calendarService } from './calendar';
@@ -8,11 +7,10 @@ export { propertiesService } from './properties';
 export { reservationsService } from './reservations';
 export { reviewsService } from './reviews';
 export { tasksService } from './tasks';
-export { usersService } from './users'; 
+export { UsersService } from './users'; 
 export { equipmentService } from './equipment'; 
 
 // Export interfaces if needed elsewhere in the app
-export type { Amenity } from './amenities';
 export type { Booking } from './bookings';
 export type { BookingSetting } from './bookingsettings';
 export type { CalendarEvent } from './calendar';
@@ -24,3 +22,5 @@ export type { Review } from './reviews';
 export type { Task } from './tasks';
 export type { User } from './users';
 export type { Equipment } from './equipment';
+export { TaskCategory } from './tasks';
+

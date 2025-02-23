@@ -1,21 +1,35 @@
+import usePropertyStore from '@/app/store/addProperty';
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
-const PricePage = ({ onPrev, onNext }) => {
-  const [pricePerNight, setPricePerNight] = useState('47');
-  const [priceToPay, setPriceToPay] = useState(56);
-  const [priceInput, setPriceInput] = useState('47');
+interface PricePageProps {
+  onPrev: () => void; // Define the type for onPrev
+  onNext: () => void; // Define the type for onNext
+}
 
-  const handlePriceChange = (text) => {
-    // Vérifiez que la valeur saisie est numérique
-    if (/^\d*$/.test(text)) {
+const PricePage: React.FC<PricePageProps> = ({ onPrev, onNext }) => {
+  const {setProperty, property} = usePropertyStore()
+
+  const [pricePerNight, setPricePerNight] = useState(property?.price);
+  const [priceToPay, setPriceToPay] = useState(56);
+  const [priceInput, setPriceInput] = useState(property.price?.toString());
+
+  const handleNextButton = () => {
+    setProperty({price: Number(priceInput)})
+    onNext()
+  }
+
+  const handlePriceChange = (text: string) => {
+    // Check that the entered value is numeric
+    if (/^\d*\.?\d*$/.test(text)) { // Allow decimal numbers
       setPriceInput(text);
     }
   };
 
   const handleSubmit = () => {
-    setPricePerNight(priceInput);
-    setPriceToPay(parseInt(priceInput) + 9); // Exemple d'ajout pour le prix du voyageur
+    const numericPrice = parseFloat(priceInput); // Convert string to number
+    setPricePerNight(numericPrice);
+    setPriceToPay(numericPrice + 9); // Example of adding for the traveler's price
   };
 
   return (
@@ -54,7 +68,7 @@ const PricePage = ({ onPrev, onNext }) => {
         <TouchableOpacity onPress={onPrev} style={styles.navButton}>
           <Text style={styles.navButtonText}>Retour</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => priceInput ? onNext() : null} style={[styles.nextButton, !priceInput && styles.disabledNextButton]}>
+        <TouchableOpacity onPress={() => priceInput ? handleNextButton() : null} style={[styles.nextButton, !priceInput && styles.disabledNextButton]}>
           <Text style={styles.nextButtonText}>Suivant</Text>
         </TouchableOpacity>
       </View>

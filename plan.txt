@@ -1,0 +1,133 @@
+Plan de Route Évolutif
+Phase 1 : MVP (0-1000 utilisateurs)
+Stack :
+
+Stockage : Supabase Storage (documents/photos)
+
+IA :
+
+DeepSeek API via Supabase Edge Functions (ex: analyse de contrats)
+
+Qwen Lite pour le chatbot locatif (React Native + Zustand)
+
+Coût estimé : < $50/mois
+
+Code Exemple (Chatbot Qwen) :
+
+tsx
+Copy
+// Zustand store pour gérer l'état du chatbot
+const useChatStore = create((set) => ({
+  messages: [],
+  askAI: async (prompt) => {
+    const { data } = await supabase.functions.invoke('qwen-chat', {
+      body: { prompt, model: 'qwen-lite' }
+    });
+    set((state) => ({ messages: [...state.messages, data.response] }));
+  }
+}));
+Phase 2 : Croissance (1k-10k utilisateurs)
+Évolutions :
+
+Stockage : Migration progressive vers Cloudflare R2 (pour les documents volumineux)
+
+IA :
+
+Déploiement de DeepSeek sur AWS SageMaker (meilleure contrôle des modèles)
+
+Cache des résultats IA avec Cloudflare KV
+
+Sécurité : Ajout de Cloudflare Zero Trust pour l'accès admin
+
+Architecture Hybride :
+
+Copy
+App React Native → Supabase (Auth/DB) → Cloudflare R2 (PDF/Images) → AWS SageMaker (IA)
+Phase 3 : Échelle (10k+ utilisateurs)
+Optimisations :
+
+Stockage : Multi-cloud (R2 + S3 IA-Archive pour documents anciens)
+
+IA :
+
+Fine-tuning de modèles Qwen sur AWS EC2 (ex: prédiction de loyers)
+
+Pipeline de données avec AWS Glue (nettoyage des données locatives)
+
+Globalisation : CDN Cloudflare + Edge Functions pour réduire la latence
+
+Intégration Profonde de l'IA
+Cas d'Usage Concrets :
+Analyse de Contrats :
+
+Stack : PDF dans R2 → AWS Textract (OCR) → DeepSeek (extraction de clauses)
+
+Exemple : Détection automatique de durées de bail
+
+Chatbot Intelligent :
+
+Stack : Qwen sur SageMaker → Cache avec Cloudflare Durable Objects
+
+Fonctionnalité : Réponses contextuelles sur les réglementations locatives
+
+Prédiction de Risques :
+
+Stack : Historique dans Supabase → AWS SageMaker (ML) → Visualisation React Native
+
+Data : Détection de retard de paiement via analyse des loyers passés
+
+
+
+
+
+Recommandations Stratégiques
+Démarrage :
+
+Utilisez Supabase + DeepSeek API pour valider rapidement votre marché.
+
+Exemple de politique RLS pour la sécurité :
+
+sql
+Copy
+create policy "Locataires accèdent à leurs documents"
+  on storage.objects for select using (
+    auth.uid() = owner_id
+  );
+Scale-Up :
+
+Migrez vers Cloudflare R2 dès que le trafic dépasse 500 Go/mois.
+
+Utilisez AWS pour l'IA quand vous aurez besoin de :
+
+Fine-tuning de modèles
+
+Pipelines de données complexes
+
+Analyse prédictive (ex: turnover locatif)
+
+All-in Cloudflare :
+
+Si votre app devient très globale, combinez :
+
+R2 (stockage)
+
+Workers AI (modèles légers)
+
+Pages (frontend)
+
+Limite : Pas d'alternative à SageMaker pour le ML avancé.
+
+Risques à Anticiper
+Vendor Lock-in : Utilisez des formats compatibles S3 (R2/Supabase/AWS).
+
+Coûts Cachés : Surveillez les appels API IA (DeepSeek/Qwen facturent par token).
+
+RGPD : Stockez les données sensibles (contrats) dans des régions spécifiques (ex: EU-Central-1 pour AWS).
+
+Stack Technique Optimale
+Copy
+Frontend: Expo/React Native (Zustand state)  
+Backend: Supabase (Auth/DB) + Cloudflare Workers (Edge Logic)  
+Stockage: Cloudflare R2 (documents) + Supabase Storage (métadonnées)  
+IA: AWS SageMaker (DeepSeek/Qwen custom) + DeepSeek API (pour le MVP)  
+Monitoring: Sentry + Cloudflare Analytics
