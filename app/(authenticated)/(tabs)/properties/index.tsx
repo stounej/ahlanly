@@ -1,250 +1,265 @@
 import { propertiesService, Property } from '@/services';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
-import AddProperty from './add';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import AddPropertyModal from './add';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
-import ManageTasks from './tasks';
+import ManageTasksModal from './tasks';
 import { TaskCategory, tasksService } from '@/services/tasks';
 import Loading from '@/components/Loading';
 
+type ModalHandles = {
+  handlePresentModalPress: () => void;
+};
 
-const Properties = () => {
-  type ChildRef = {
-    handlePresentModalPress: () => void;
-  };
+const PropertiesScreen = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [taskCategories, setTaskCategories] = useState<TaskCategory[]>([]);
-  const [selectedCateg, setSelectedCateg] = useState<TaskCategory>([]);
-  const childRef = useRef<ChildRef>(null);
-  const childRef2 = useRef<ChildRef>(null);
-  const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState<TaskCategory>([]);
+  const addPropertyModalRef = useRef<ModalHandles>(null);
+  const manageTasksModalRef = useRef<ModalHandles>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handlePress = () => {
-    childRef.current?.handlePresentModalPress();
+  const handleAddPropertyPress = () => {
+    addPropertyModalRef.current?.handlePresentModalPress();
   };
 
-  const handlePress2 = (categ : TaskCategory) => {
-    setSelectedCateg(categ)
-    childRef2.current?.handlePresentModalPress();
+  const handleCategoryPress = (category: TaskCategory) => {
+    setSelectedCategory(category);
+    manageTasksModalRef.current?.handlePresentModalPress(); 
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const t = await tasksService.getTaskCategories();     
-      setTaskCategories(t);
-      const p = await propertiesService.getAll();     
-      setProperties(p);
-      setLoading(false)
+    const fetchInitialData = async () => {
+      try {
+        const [categoriesResponse, propertiesResponse] = await Promise.all([
+          tasksService.getTaskCategories(),
+          propertiesService.getAll()
+        ]);
+        
+        setTaskCategories(categoriesResponse);
+        setProperties(propertiesResponse);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    fetchData();
+
+    fetchInitialData();
   }, []);
 
-  const renderProperty = ({ item }: { item: Property }) => (
-    <TouchableOpacity style={styles.propertyCard} onPress={() => router.push(`/properties/${item.id}`)}>
-      <Image source={{ uri: item.property_images[0]?.image_url }} style={styles.propertyImage} />
-      <View style={[styles.availabilityDot, item.available ? styles.dotAvailable : styles.dotUnavailable]} />
+  const renderPropertyItem = ({ item: property }: { item: Property }) => (
+    <TouchableOpacity 
+      style={styles.propertyCard} 
+      onPress={() => router.push(`/properties/${property.id}`)}
+    >
+      <Image 
+        source={{ uri: property.property_images[0]?.image_url }} 
+        style={styles.propertyImage} 
+        resizeMode="cover"
+      />
+      <View style={[
+        styles.availabilityBadge, 
+        property.available ? styles.availableBadge : styles.unavailableBadge
+      ]} />
 
-      <View style={styles.propertyDetails}>
-        <Text style={styles.propertyTitle}>{item.title}</Text>
-        <Text style={styles.propertyDescription}>{item.description}</Text>
+      <View style={styles.propertyInfo}>
+        <Text style={styles.propertyTitle}>{property.title}</Text>
+        <Text style={styles.propertyDescription} numberOfLines={2}>
+          {property.description}
+        </Text>
       </View>
 
-      <View style={styles.tasksContainer}>
-        {item.tasks.map((task, index) => (
-          <View key={index} style={styles.taskIcon}>
-            {renderIcon(task.task_categories.icon_library, task.task_categories.icon_name, 15)}
+      <View style={styles.taskIconsContainer}>
+        {property.tasks.map((task, index) => (
+          <View key={index} style={styles.taskIconWrapper}>
+            {renderTaskCategoryIcon(
+              task.task_categories.icon_library, 
+              task.task_categories.icon_name, 
+              15
+            )}
           </View>
         ))}
       </View>
 
-      <View style={styles.ratingContainer}>
-        <Text style={styles.ratingText}>Rating: </Text>
+      <View style={styles.ratingSection}>
+        <Text style={styles.ratingLabel}>Note : </Text>
         <Text style={styles.ratingStars}>★★★★☆</Text>
-        <Text style={styles.ratingValue}>{item.review?.rating}</Text>
+        <Text style={styles.ratingValue}>{property.review?.rating || 'N/A'}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  const renderIcon = (iconLibrary: string, iconName: string, size: number) => {
+  const renderTaskCategoryIcon = (iconLibrary: string, iconName: string, size: number) => {
     const IconComponent = {
       Ionicons,
       MaterialIcons,
       FontAwesome5,
       Feather
-    }[iconLibrary as keyof typeof IconComponents];
+    }[iconLibrary as keyof typeof IconComponent];
 
     return IconComponent ? (
-      <IconComponent name={iconName} size={size} />
+      <IconComponent name={iconName} size={size} color="#2c3e50" />
     ) : null;
   };
 
   return (
-    <View style={styles.container}>
-    {loading ? (
-      <Loading  loading/>
-    ) : (
-      <>
-        <View style={styles.headerContainer}>
-          <ScrollView 
-            horizontal 
-            style={styles.taskScrollContainer}
-            contentContainerStyle={styles.taskScrollContent}
-            showsHorizontalScrollIndicator={false}
-          >
-            {taskCategories.map((categ, index) => (
-              <TouchableOpacity key={index} style={styles.smallTaskCard}
-                onPress={() => handlePress2(categ)}>
-                {renderIcon(categ.icon_library, categ.icon_name, 20)}
-                <Text style={styles.smallTaskTitle}>{categ.name}</Text>
-                <Text style={styles.smallTaskCount}>
-                  {categ.tasks.filter(c => c.status === 'completed').length}
-                  /
-                  {categ.tasks.length}
-                </Text>
+    <View style={styles.screenContainer}>
+      {isLoading ? (
+        <Loading isLoading={isLoading} />
+      ) : (
+        <>
+          <View style={styles.headerSection}>
+            <ScrollView 
+              horizontal 
+              style={styles.categoriesScrollView}
+              contentContainerStyle={styles.categoriesContainer}
+              showsHorizontalScrollIndicator={false}
+            >
+              {taskCategories.map((category, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={styles.categoryCard}
+                  onPress={() => handleCategoryPress(category)}
+                >
+                  {renderTaskCategoryIcon(category.icon_library, category.icon_name, 22)}
+                  <Text style={styles.categoryTitle}>{category.name}</Text>
+                  <Text style={styles.taskProgress}>
+                    {category.tasks.filter(t => t.status === 'completed').length}
+                    /{category.tasks.length}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity 
+                onPress={handleAddPropertyPress} 
+                style={styles.primaryButton}
+              >
+                <Text style={styles.buttonText}> Ajouter un bien</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-  
-          <View style={styles.addButtonContainer}>
-            <TouchableOpacity onPress={handlePress} style={styles.addButton}>
-              <Text style={styles.addButtonText}>Ajouter un appartement</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterButton}>
-              <FontAwesome5 name="filter" size={28} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterButton}>
-              <Feather name="upload" size={30} color="#333" />
-            </TouchableOpacity>
+              <View style={styles.secondaryButtons}>
+                <TouchableOpacity style={styles.iconButton}>
+                  <FontAwesome5 name="filter" size={20} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton}>
+                  <Feather name="upload" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-  
-        {/* Liste avec padding pour l'en-tête fixe */}
-        <FlatList
-          data={properties}
-          keyExtractor={(item) => item.id}
-          renderItem={renderProperty}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={<View style={styles.listHeader} />}
-        />
-  
-        <AddProperty ref={childRef} />
-        <ManageTasks ref={childRef2} selectedCateg={selectedCateg} />
-      </>
-    )}
-  </View>
+
+          <FlatList
+            data={properties}
+            keyExtractor={(property) => property.id}
+            renderItem={renderPropertyItem}
+            contentContainerStyle={styles.propertiesList}
+            ListHeaderComponent={<View style={styles.listHeaderSpacer} />}
+            showsVerticalScrollIndicator={false}
+          />
+
+          <AddPropertyModal ref={addPropertyModalRef} />
+          <ManageTasksModal ref={manageTasksModalRef} selectedCategory={selectedCategory} />
+        </>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
-  headerContainer: {
+  headerSection: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1,
-    backgroundColor: '#fff',
-    padding: 8,
+    zIndex: 10,
+    backgroundColor: '#ffffff',
+    padding: 12,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 3,
   },
-  listContent: {
+  categoriesScrollView: {
+    height: 100,
+  },
+  categoriesContainer: {
+    paddingVertical: 8,
+  },
+  categoryCard: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginRight: 10,
+    width: 100,
+    height: 80,
+    justifyContent: 'space-between',
+  },
+  categoryTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1a237e',
+    textAlign: 'center',
+  },
+  taskProgress: {
+    fontSize: 10,
+    color: '#3949ab',
+    fontWeight: '500',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#2196f3',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    backgroundColor: '#2196f3',
+    padding: 10,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  propertiesList: {
     paddingHorizontal: 16,
     paddingBottom: 32,
   },
-  listHeader: {
-    height: 220, // Doit correspondre au paddingTop
-  },
-  topButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 5,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  buttonText: {
-    color: '#333',
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  taskScrollContainer: {
-    marginTop: 15,
-    height: 90,
-  },
-  taskScrollContent: {
-    paddingVertical: 8,
-  },
-  smallTaskCard: {
-    backgroundColor: '#e0e0e0',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 8,
-    width: 100,
-    height: 80,
-    justifyContent: 'center',
-  },
-  smallTaskTitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  smallTaskCount: {
-    fontSize: 12,
-    color: '#2c3e50',
-    textAlign: 'center',
-  },
-  addButtonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 6,
-  },
-  addButton: {
-    flex: 1,
-    backgroundColor: '#27ae60',
-    paddingVertical: 18,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  filterButton: {
-    paddingHorizontal: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  listHeaderSpacer: {
+    height: 200,
   },
   propertyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     padding: 16,
     marginBottom: 16,
     borderRadius: 12,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
   },
   propertyImage: {
     width: '100%',
@@ -252,51 +267,55 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  availabilityDot: {
+  availabilityBadge: {
     width: 16,
     height: 16,
     borderRadius: 8,
     position: 'absolute',
-    top: 18,
-    right: 18,
+    top: 20,
+    right: 20,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#ffffff',
   },
-  dotAvailable: {
+  availableBadge: {
     backgroundColor: '#4caf50',
   },
-  dotUnavailable: {
+  unavailableBadge: {
     backgroundColor: '#f44336',
   },
-  propertyDetails: {
+  propertyInfo: {
     marginBottom: 12,
   },
   propertyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#1a237e',
     marginBottom: 4,
   },
   propertyDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#546e7a',
+    lineHeight: 20,
   },
-  tasksContainer: {
+  taskIconsContainer: {
     flexDirection: 'row',
-  },
-  taskIcon: {
-    padding: 5,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 6,
-    marginRight: 7,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     marginTop: 8,
   },
-  ratingText: {
+  taskIconWrapper: {
+    padding: 6,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
+  },
+  ratingSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  ratingLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#546e7a',
   },
   ratingStars: {
     fontSize: 14,
@@ -305,8 +324,9 @@ const styles = StyleSheet.create({
   },
   ratingValue: {
     fontSize: 14,
-    color: '#666',
+    color: '#546e7a',
+    fontWeight: '600',
   },
 });
 
-export default Properties;
+export default PropertiesScreen;

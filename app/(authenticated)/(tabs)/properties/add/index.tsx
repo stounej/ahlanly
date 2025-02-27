@@ -101,7 +101,10 @@ const AddProperty = forwardRef((props, ref) => {
         case 6:
         return (
           <View style={styles.content}>
-            <AddTitlePage onNext={nextStep} onPrev={prevStep}/>
+            <AddTitlePage onNext={nextStep} onPrev={prevStep}
+                          onClose={handleCloseModalPress}
+                          isEdit={props.isEdit}
+/>
           </View>
         );
         case 7:
