@@ -14,11 +14,12 @@ import usePropertyStore from '@/app/store/addProperty';
     const { id } = useLocalSearchParams<{ id: string }>();
     const childRef = useRef<ChildRef>(null);
     const [step, setStep] = useState(0);
-    const { setProperty, property } = usePropertyStore();
+    const { setCurrentProperty, property } = usePropertyStore();
 
 
 
     const [appartement, setAppartment] = useState<Property>({
+      ...property,
       equipmentByCategory: {
         Cuisine: [
           { id: 1, name: 'Cafetière Nespresso' },
@@ -60,7 +61,6 @@ import usePropertyStore from '@/app/store/addProperty';
             acc[categoryName].items.push(task as Task);
             return acc;
           }, {} as Record<string, Task[]>);
-          console.log(grouped);
           
           setAppartment(prev => ({
             ...prev,
@@ -68,7 +68,7 @@ import usePropertyStore from '@/app/store/addProperty';
             tasksByCategory: Object.values(grouped)
           }));
 
-          setProperty(
+          setCurrentProperty(
             {
               ...property
             }

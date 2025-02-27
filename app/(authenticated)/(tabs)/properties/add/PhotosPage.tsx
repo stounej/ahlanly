@@ -138,6 +138,7 @@ const PhotosPage: React.FC<PhotosPageProps> = ({ onPrev, onNext, isEdit, onClose
   const submitEdit   =  async ()  => {    
     const changes = getImageChanges(property.property_images,photos)
     await propertiesService.updateImages(property.id, changes)
+    setProperty({ property_images: photos });
   }
   return (
     <View style={styles.container}>

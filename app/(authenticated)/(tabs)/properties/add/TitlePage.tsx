@@ -1,19 +1,30 @@
 import usePropertyStore from '@/app/store/addProperty';
+import usePropertiesStore from '@/app/store/properties';
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 
 interface TitlePageProps {
   onPrev: () => void;
   onNext: () => void;
+  onClose: () => void;
+  isEdit: boolean
 }
 
-const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext }) => {
-  const {setProperty, property} = usePropertyStore()
+const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext, onClose, isEdit }) => {
+  const {setCurrentProperty, property} = usePropertyStore()
+  const {setProperty} = usePropertiesStore()
+
   const [title, setTitle] = useState(property?.title);
 
   const handleNextButton = () => {
-    setProperty({title})
+    setCurrentProperty({title: title})
     onNext()
+  }
+  const submitEdit   =  async ()  => {    
+    setCurrentProperty({ title: title });
+    const newProperty = {...property, title}
+    setProperty(property.id, newProperty)
   }
 
   return (
@@ -36,19 +47,54 @@ const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext }) => {
       </ScrollView>
 
       {/* Footer with Navigation Buttons */}
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={onPrev} style={styles.navButton}>
-          <Text style={styles.navButtonText}>Retour</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => title ? handleNextButton() : null} style={[styles.nextButton, !title && styles.disabledNextButton]}>
-          <Text style={styles.nextButtonText}>Suivant</Text>
-        </TouchableOpacity>
+      {!isEdit ?  <View style={styles.footer}>
+        <FooterButton text="Retour" onPress={onPrev} secondary={true} />
+        <FooterButton text="Suivant" onPress={handleNextButton} disabled={!title} secondary={false} />
       </View>
+      :
+      <View style={styles.footer}>
+      <FooterButton text="Fermer" onPress={onClose} secondary={true} />
+      <FooterButton text="Enregistrer" onPress={() => submitEdit()} disabled={!title} secondary={false} />
+    </View>}
     </View>
   );
 };
 
+const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.footerButton, secondary && styles.secondaryButton]}
+    disabled={disabled}
+  >
+    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
+  footerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    minWidth: 170,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#e9ecef',
+  },
+  footerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#495057',
+  },
+  disabledButtonText: {
+    color: '#868e96',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',

@@ -142,22 +142,16 @@ export const propertiesService = {
 
     const addedImages = images.addedImages
     const deletedImages = images.deletedImages
-    
 
     try{
-       // Compression et upload des images
-
        if(addedImages.length > 0){
        const compressedImageUris = await Promise.all(
         addedImages.map(async (img) => {
-          // Compression de l'image
-         
           const compressedImage = await manipulateAsync(
             img.image_url,
             [{ resize: { width: 1080 } }], // Redimensionnement tout en gardant le ratio
             { compress: 0.8, format: SaveFormat.JPEG } // Compression à 80% qualité
           ); 
-// Génération d'un nom de fichier unique
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
           const arraybuffer = await fetch(compressedImage.uri).then((res) => res.arrayBuffer())
 
@@ -194,41 +188,42 @@ export const propertiesService = {
     }
 
   
-    if(deletedImages.length > 0){
-      console.log('deletedImages---------------------');
-
-      console.log(deletedImages);
-      
- 
+    if(deletedImages.length > 0){      
       const { data, error } = await supabase
       .storage
       .from('ahlanly_public')
-      .remove(['1739827466606_ttd0f6.jpg']);
+      .remove(deletedImages.map((d:any) => d.path));
 
-      console.log(data);
-      console.log(error);
-
-      
-
-
-        // const { data: imagesData, error: imageError } = await supabase
-        // .from('property_images')
-        // .delete(deletedImages.map((uri) => ({
-        //   image_url: uri
-        // })))
-        // .eq('property_id',propertyId )
-        // .select();
-
-        // console.log(imageError);
-        
-       
-        
+        const { data: imagesData, error: imageError } = await supabase
+        .from('property_images')
+        .delete()
+        .eq('id',deletedImages.map((d:any) => d.id) )
+        .select();
   }
     }
     catch(err){
       console.log(err); 
     }
+    },
 
-    }
+    update_title: async(propertyId, title) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({title: title})
+      .eq('id', propertyId)
+    },
 
+    update_description: async(propertyId, description) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({description: description})
+      .eq('id', propertyId)
+    },
+
+    // update_description: async(propertyId, description) => {
+    //   const { data: imagesData, error: imageError } = await supabase
+    //   .from('properties')
+    //   .update({description: description})
+    //   .eq('id', propertyId)
+    // }
   }; 
