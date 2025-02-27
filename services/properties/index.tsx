@@ -195,32 +195,22 @@ export const propertiesService = {
 
   
     if(deletedImages.length > 0){
-      console.log('deletedImages---------------------');
-
-      console.log(deletedImages);
-      
  
       const { data, error } = await supabase
       .storage
       .from('ahlanly_public')
-      .remove(['1739827466606_ttd0f6.jpg']);
-
-      console.log(data);
-      console.log(error);
+      .remove(deletedImages.map(img => img.path));
 
       
 
 
-        // const { data: imagesData, error: imageError } = await supabase
-        // .from('property_images')
-        // .delete(deletedImages.map((uri) => ({
-        //   image_url: uri
-        // })))
-        // .eq('property_id',propertyId )
-        // .select();
-
-        // console.log(imageError);
-        
+        const { data: imagesData, error: imageError } = await supabase
+        .from('property_images')
+        .delete(deletedImages.map((img) => ({
+          id: img.id
+        })))
+        .eq('property_id',propertyId )
+        .select();        
        
         
   }
