@@ -1,172 +1,387 @@
-import { TabBarIcon } from '@/components/TabBarIcon';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function Page() {
-  const reservations = [
-    { id: 1, client: 'Alice Dupont', duration: '3 jours', photo: 'https://cdn-icons-png.flaticon.com/512/5969/5969433.png' },
-    { id: 2, client: 'Jean Martin', duration: '1 semaine', photo: 'https://cdn-icons-png.flaticon.com/512/5969/5969433.png' },
-    { id: 3, client: 'Sophie Durand', duration: '2 jours', photo: 'https://cdn-icons-png.flaticon.com/512/5969/5969433.png' },
-  ];
-
-  return (
-    <ScrollView style={styles.scrollContainer}>
-      <View style={styles.container}>
-        {/* Top Bar */}
-        <View style={styles.topBar}>
-          <View>
-            <Text style={styles.dateText}>18 January 2025</Text>
-            <Text style={styles.dayText}>Saturday</Text>
-          </View>
-          <View style={styles.icons}> 
-            <TouchableOpacity style={styles.icon}>
-            <TabBarIcon name="bell" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.icon}>
-            <TabBarIcon name="user" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
-          <Text style={styles.sectionTitle}>Actions rapides</Text>
-          <ScrollView horizontal style={styles.quickActions}>
-        {/* Ajouter un appartement */}
-        <TouchableOpacity style={styles.card}>
-        <TabBarIcon name="home" style={styles.icon} />
-          <Text style={styles.cardText}>Ajouter un appartement</Text>
-        </TouchableOpacity>
-
-        {/* Ajouter un meuble */}
-        <TouchableOpacity style={styles.card}>
-          <TabBarIcon name="couch" style={styles.icon} />
-          <Text style={styles.cardText}>Ajouter un meuble</Text>
-        </TouchableOpacity>
-
-        {/* Voir les suggestions */}
-        <TouchableOpacity style={styles.card}>
-          <TabBarIcon name="lightbulb" style={styles.icon} />
-            <Text style={styles.cardText}>Voir les suggestions</Text>
-          </TouchableOpacity>
-      </ScrollView>
-        </View>
-
-        {/* Reservations */}
-        <View style={styles.quickActionsContainer}>
-          <Text style={styles.sectionTitle}>Mes réservations</Text>
-          <ScrollView horizontal style={styles.reservationList}>
-            {reservations.map((reservation) => (
-              <View key={reservation.id} style={styles.reservationCard}>
-                <Image source={{ uri: reservation.photo }} style={styles.clientPhoto} />
-                <Text style={styles.clientName}>{reservation.client}</Text>
-                <Text style={styles.duration}>{reservation.duration}</Text>
-                <TouchableOpacity style={styles.contactButton}>
-                  <Text style={styles.contactButtonText}>Contacter</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-          {/* Apartments List */}
-          <View style={styles.apartmentListContainer}>
-          <Text style={styles.sectionTitle}>Mes appartements</Text>
-          <View style={styles.apartmentCard}>
-            <Image source={{ uri:'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' }} style={styles.apartmentImage} />
-            <Text style={styles.apartmentName}>Appartement 1</Text>
-            <Text style={styles.apartmentDesc}>Description courte...</Text>
-          </View>
-          <View style={styles.apartmentCard}>
-            <Image source={{ uri:'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' }} style={styles.apartmentImage} />
-            <Text style={styles.apartmentName}>Appartement 1</Text>
-            <Text style={styles.apartmentDesc}>Description courte...</Text>
-          </View>
-          <View style={styles.apartmentCard}>
-            <Image source={{ uri:'https://images.ctfassets.net/pg6xj64qk0kh/2r4QaBLvhQFH1mPGljSdR9/39b737d93854060282f6b4a9b9893202/camden-paces-apartments-buckhead-ga-terraces-living-room-with-den_1.jpg' }} style={styles.apartmentImage} />
-            <Text style={styles.apartmentName}>Appartement 1</Text>
-            <Text style={styles.apartmentDesc}>Description courte...</Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
+// Add these interfaces at the top of the file after imports
+interface Tip {
+  id: string;
+  text: string;
 }
 
-const styles = StyleSheet.create({
-  scrollContainer: { flex: 1, backgroundColor: '#f9f9f9' },
-  container: { flex: 1, paddingHorizontal: 20 },
+interface Task {
+  id: string;
+  title: string;
+  date: string;
+}
 
-  /* Top Bar */
-  topBar: {
+interface Review {
+  id: string;
+  guest: string;
+  comment: string;
+  rating: number;
+}
+
+interface Reservation {
+  id: string;
+  guest: string;
+  property: string;
+  date: string;
+}
+
+interface AnalyticsButton {
+  id: string;
+  title: string;
+}
+
+const Dashboard = () => {
+  const navigation = useNavigation();
+
+  // Dummy Data
+  const stats = [
+    { id: '1', title: 'Total Bookings', value: '24' },
+    { id: '2', title: 'Revenue', value: '$1,200' },
+    { id: '3', title: 'Upcoming Bookings', value: '5' },
+  ];
+
+  const tips = [
+    { id: '1', text: 'Add more photos to your listings.' },
+    { id: '2', text: 'Improve your response rate to guest inquiries.' },
+    { id: '3', text: 'Consider dynamic pricing for better revenue.' },
+  ];
+
+  const tasks = [
+    { id: '1', title: 'Clean Apartment', date: '2023-10-12' },
+    { id: '2', title: 'Maintenance Check', date: '2023-10-15' },
+    { id: '3', title: 'Restock Supplies', date: '2023-10-18' },
+  ];
+
+  const reviews = [
+    { id: '1', guest: 'John Doe', comment: 'Great place!', rating: 5 },
+    { id: '2', guest: 'Jane Smith', comment: 'Very clean and cozy.', rating: 4 },
+    { id: '3', guest: 'Alice Johnson', comment: 'Amazing view!', rating: 5 },
+  ];
+
+  const upcomingReservations = [
+    { id: '1', guest: 'John Doe', property: 'Cozy Apartment', date: '2023-10-15' },
+    { id: '2', guest: 'Jane Smith', property: 'Luxury Villa', date: '2023-10-20' },
+    { id: '3', guest: 'Alice Johnson', property: 'Beach House', date: '2023-10-25' },
+  ];
+
+  const analyticsButtons = [
+    { id: '1', title: 'Revenue' },
+    { id: '2', title: 'Occupancy Rate' },
+    { id: '3', title: 'Guest Ratings' },
+  ];
+
+  // Render Stats
+  const renderStats = () => (
+    <View style={styles.statsContainer}>
+      {stats.map((item) => (
+        <View key={item.id} style={styles.statCard}>
+          <Text style={styles.statValue}>{item.value}</Text>
+          <Text style={styles.statTitle}>{item.title}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
+  // Render Tips
+  const renderTips = ({ item }: { item: Tip }) => (
+    <View style={styles.tipCard}>
+      <Text style={styles.tipText}>{item.text}</Text>
+    </View>
+  );
+
+  // Render Tasks
+  const renderTasks = ({ item }: { item: Task }) => (
+    <View style={styles.taskCard}>
+      <Text style={styles.taskTitle}>{item.title}</Text>
+      <Text style={styles.taskDate}>{item.date}</Text>
+    </View>
+  );
+
+  // Render Reviews
+  const renderReviews = ({ item }: { item: Review }) => (
+    <View style={styles.reviewCard}>
+      <Text style={styles.reviewGuest}>{item.guest}</Text>
+      <Text style={styles.reviewComment}>{item.comment}</Text>
+      <Text style={styles.reviewRating}>Rating: {item.rating}/5</Text>
+    </View>
+  );
+
+  // Render Upcoming Reservations
+  const renderUpcomingReservations = ({ item }: { item: Reservation }) => (
+    <View style={styles.reservationCard}>
+      <Text style={styles.reservationGuest}>{item.guest}</Text>
+      <Text style={styles.reservationProperty}>{item.property}</Text>
+      <Text style={styles.reservationDate}>{item.date}</Text>
+    </View>
+  );
+
+  // Render Analytics Buttons
+  const renderAnalyticsButtons = ({ item }: { item: AnalyticsButton }) => (
+    <TouchableOpacity style={styles.analyticsButton}>
+      <Text style={styles.analyticsButtonText}>{item.title}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Dashboard</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity >
+            <Text style={styles.icon}>🔔</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.icon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Stats Section */}
+      {renderStats()}
+
+       {/* Analytics Buttons */}
+       <View style={styles.section}>
+        <FlatList
+          data={analyticsButtons}
+          keyExtractor={(item) => item.id}
+          renderItem={renderAnalyticsButtons}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+
+      {/* Tasks Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Tasks</Text>
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTasks}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+
+ {/* Upcoming Reservations Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Upcoming Reservations</Text>
+          <Text style={styles.reservationCount}>{upcomingReservations.length} Reservations</Text>
+        </View>
+        <FlatList
+          data={upcomingReservations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderUpcomingReservations}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+      {/* AI Tips Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>AI Tips</Text>
+        <FlatList
+          data={tips}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTips}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+
+      {/* Guest Reviews Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Guest Reviews</Text>
+        <FlatList
+          data={reviews}
+          keyExtractor={(item) => item.id}
+          renderItem={renderReviews}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+      
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  icon: {
+    fontSize: 24,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    width: '30%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1E90FF',
+  },
+  statTitle: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-  dateText: { fontSize: 14, color: '#888', marginBottom: -7, marginTop: 8 },
-  dayText: { fontSize: 20, fontWeight: 'bold' },
-  icons: { flexDirection: 'row' },
-  icon: { marginHorizontal: 10, alignSelf: 'center', marginBottom: 5, marginTop: 5 },
-
-  /* Section Titles */
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginVertical: 10 },
-
-  /* Quick Actions */
-  quickActionsContainer: { marginBottom: 20 },
-  quickActions: { flexDirection: 'row' },
-  card: {
-    padding: 20,
-    marginHorizontal: 5,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    width: 130,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
   },
-
-  /* Reservations */
-  reservationList: { flexDirection: 'row' },
-  reservationCard: {
+  reservationCount: {
+    fontSize: 16,
+    color: '#666666',
+  },
+  tipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tipText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  taskCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
     width: 150,
-    padding: 10,
-    marginHorizontal: 5,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    alignItems: 'center',
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  clientPhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
   },
-  clientName: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
-  duration: { fontSize: 14, color: '#666', marginBottom: 10 },
-  contactButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
+  taskDate: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
   },
-  contactButtonText: { color: '#fff', fontSize: 14 },
-/* Apartments List */
-apartmentListContainer: { marginBottom: 20 },
-apartmentCard: {
-  marginBottom: 15,
-  backgroundColor: '#fff',
-  borderRadius: 10,
-  padding: 10,
-},
-apartmentImage: { width: '100%', height: 150, borderRadius: 10 },
-apartmentName: { fontSize: 16, fontWeight: 'bold', marginTop: 5 },
-apartmentDesc: { fontSize: 14, color: '#666' },
-cardText: {
-  textAlign: 'center',
-  fontSize: 14,
-  fontWeight: '500',
-},
+  reviewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reviewGuest: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
+  },
+  reviewRating: {
+    fontSize: 14,
+    color: '#1E90FF',
+    marginTop: 8,
+  },
+  reservationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reservationGuest: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  reservationProperty: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
+  },
+  reservationDate: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
+  },
+  analyticsButton: {
+    backgroundColor: '#1E90FF',
+    borderRadius: 8,
+    padding: 16,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyticsButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
 });
+
+export default Dashboard;
