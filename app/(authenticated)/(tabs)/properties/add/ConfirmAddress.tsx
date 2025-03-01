@@ -12,14 +12,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import * as Location from 'expo-location';
 import usePropertyStore from '@/app/store/addProperty';
+import { propertiesService } from '@/services';
 
 interface ConfirmAddressProps {
   onNext: () => void;
   onPrev: () => void;
+  onCloseEditor: () => void;
+  isEditMode: boolean;
 }
 
-const ConfirmAddress: React.FC<ConfirmAddressProps> = ({ onNext, onPrev }) => {
-  const { setProperty, property } = usePropertyStore();
+const ConfirmAddress: React.FC<ConfirmAddressProps> = ({ onNext, onPrev, onCloseEditor, isEditMode  }) => {
+  const { setCurrentProperty, property } = usePropertyStore();
   const [address, setAddress] = useState({
     ...property
   });
@@ -30,11 +33,39 @@ const ConfirmAddress: React.FC<ConfirmAddressProps> = ({ onNext, onPrev }) => {
   };
 
   const handleNextButton = () => {
-    setProperty({
+    setCurrentProperty({
       ...address,
     });
     onNext();
   };
+
+  const submitEdit   =  async ()  => {   
+    if (address.address !== property.address
+      ||
+      address.zip_code !== property.zip_code
+      ||
+      address.country !== property.country
+      ||
+      address.city !== property.city
+      ||
+      address.address_complement !== property.address_complement
+
+    ) {
+      setCurrentProperty({ address: address.address,
+                          zip_code: address.zip_code,
+                          country: address.country,
+                          city: address.city,
+                          address_complement: address.address_complement
+       });
+      //const newProperty = {...property, property_style: selectedOption}
+      propertiesService.update_address(property.id, address).then(()=> {
+        onCloseEditor('Vos modification sont enregistrées')
+        
+      })
+      //setProperty(property.id, newProperty)
+    }
+
+  }
 
   const handleLocationDetect = async () => {
     try {
@@ -180,25 +211,54 @@ const ConfirmAddress: React.FC<ConfirmAddressProps> = ({ onNext, onPrev }) => {
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          onPress={onPrev}
-          style={[styles.button, styles.backButton]}
-        >
-          <Text >Retour</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleNextButton}
-          style={[styles.button, styles.nextButton]}
-        >
-          <Text >Confirmer</Text>
-        </TouchableOpacity>
+      {!isEditMode ?  <View style={styles.footer}>
+        <FooterButton text="Retour" onPress={onPrev} secondary={true} />
+        <FooterButton text="Suivant" onPress={handleNextButton} disabled={!address} secondary={false} />
       </View>
+      :
+      <View style={styles.footer}>
+      <FooterButton text="Fermer" onPress={() => onCloseEditor()} secondary={true} />
+      <FooterButton text="Enregistrer" onPress={() => submitEdit()} disabled={!address} secondary={false} />
+    </View>}
     </View>
   );
 };
 
+const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.footerButton, secondary && styles.secondaryButton]}
+    disabled={disabled}
+  >
+    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
+  footerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    minWidth: 170,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#e9ecef',
+  },
+  footerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#495057',
+  },
+  disabledButtonText: {
+    color: '#868e96',
+  },
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   header: { padding: 20, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#ECECEC' },
   headerTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center', color: '#1A1A1A' },
@@ -210,8 +270,22 @@ const styles = StyleSheet.create({
   gpsButton: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 8, backgroundColor: 'white' },
   gpsButtonText: { fontSize: 16, marginLeft: 12, fontWeight: '500' },
   loader: { marginLeft: 8 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, backgroundColor: 'white' },
-  button: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderColor: '#dee2e6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },  button: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   backButton: { backgroundColor: '#F8F9FA', marginRight: 10 },
   nextButton: { backgroundColor: '#007BFF', marginLeft: 10 }
 });

@@ -1,200 +1,305 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, Animated } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import usePropertyStore from '@/app/store/addProperty';
 import { ScrollView } from 'react-native-gesture-handler';
+
 import { propertiesService } from '@/services';
 
-interface PhotosPageProps {
-  onPrev: () => void;
-  onNext: () => void;
-  onClose: () => void;
-  isEdit: boolean
+interface PhotosEditorProps {
+  onPreviousStep: () => void;
+  onNextStep: () => void;
+  onCloseEditor: (message?: string) => void;
+  isEditMode: boolean;
 }
 
-interface PhotoMenuButtonProps {
-  onPress: () => void;
+interface PhotoActionsMenuProps {
+  onMenuAction: () => void;
 }
 
-const PhotosPage: React.FC<PhotosPageProps> = ({ onPrev, onNext, isEdit, onClose }) => {
-  const { setProperty, property } = usePropertyStore();
-  const [photos, setPhotos] = useState([...property.property_images || []]);
+const PhotosEditor: React.FC<PhotosEditorProps> = ({ 
+  onPreviousStep, 
+  onNextStep, 
+  isEditMode, 
+  onCloseEditor 
+}) => {
+  const { setCurrentProperty, property } = usePropertyStore();
+  const [currentPhotos, setCurrentPhotos] = useState([...property.property_images || []]);
   const { showActionSheetWithOptions } = useActionSheet();
-  const fadeAnim = useState(new Animated.Value(0))[0];
 
-  const handleMenuPress = (index: number) => {
-    const options = ['Supprimer', 'Déplacer en avant', 'Déplacer en arrière', 'Annuler'];
-    const destructiveButtonIndex = 0;
-    const cancelButtonIndex = 3;
+  const PHOTO_ACTIONS = {
+    DELETE: 'Supprimer',
+    MOVE_FORWARD: 'Déplacer en avant',
+    MOVE_BACKWARD: 'Déplacer en arrière',
+    CANCEL: 'Annuler'
+  };
 
+  
+ 
+
+
+  const showPhotoContextMenu = (photoIndex: number) => {
+    const actionOptions = [
+      PHOTO_ACTIONS.DELETE, 
+      PHOTO_ACTIONS.MOVE_FORWARD, 
+      PHOTO_ACTIONS.MOVE_BACKWARD, 
+      PHOTO_ACTIONS.CANCEL
+    ];
+    
     showActionSheetWithOptions({
-      options,
-      cancelButtonIndex,
-      destructiveButtonIndex,
+      options: actionOptions,
+      cancelButtonIndex: 3,
+      destructiveButtonIndex: 0,
       tintColor: '#007BFF',
-      textStyle: { fontFamily: 'System' },
     }, (selectedIndex) => {
-      if (selectedIndex === 0) handleDeletePhoto(index);
-      if (selectedIndex === 1) handleMovePhoto(index, 'forward');
-      if (selectedIndex === 2) handleMovePhoto(index, 'backward');
+      switch(selectedIndex) {
+        case 0: 
+          removePhoto(photoIndex);
+          break;
+        case 1: 
+          repositionPhoto(photoIndex, 'forward');
+          break;
+        case 2: 
+          repositionPhoto(photoIndex, 'backward');
+          break;
+      }
     });
   };
 
-  const animateButton = () => {
-    Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 0.8, duration: 150, useNativeDriver: true }),
-    ]).start();
+  const removePhoto = (targetIndex: number) => {
+    setCurrentPhotos(previousPhotos => 
+      previousPhotos.filter((_, index) => index !== targetIndex)
+    );
   };
 
-  const handleDeletePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
+  const repositionPhoto = (currentIndex: number, direction: 'forward' | 'backward') => {
+    const newPosition = direction === 'forward' ? currentIndex - 1 : currentIndex + 1;
+    
+    setCurrentPhotos(previousPhotos => {
+      const updatedPhotos = [...previousPhotos];
+      if (newPosition >= 0 && newPosition < updatedPhotos.length) {
+        [updatedPhotos[currentIndex], updatedPhotos[newPosition]] = 
+          [updatedPhotos[newPosition], updatedPhotos[currentIndex]];
+      }
+      return updatedPhotos;
+    });
   };
 
-  const handleMovePhoto = (index : number, direction: any) => {
-    const newPhotos = [...photos];
-    const newIndex = direction === 'forward' ? index - 1 : index + 1;
-    if (newIndex >= 0 && newIndex < photos.length) {
-      [newPhotos[index], newPhotos[newIndex]] = [newPhotos[newIndex], newPhotos[index]];
-      setPhotos(newPhotos);
-    }
-  };
-
-  const handleAddPhoto = async () => {
-    animateButton();
+  const requestMediaPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return Alert.alert('Permission requise', 'Veuillez autoriser l\'accès à votre galerie');
+    if (status !== 'granted') {
+      Alert.alert('Permission requise', 'Autorisez l\'accès à votre bibliothèque média');
+      return false;
+    }
+    return true;
+  };
 
+  const openImagePicker = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
-        selectionLimit: 10 - photos.length,
+        selectionLimit: 10 - currentPhotos.length,
       });
 
-      if (!result.canceled) {
-        setPhotos(prev => [...prev, ...result.assets.map(a => ({ image_url: a.uri, caption: '' }))]);
+      if (!pickerResult.canceled) {
+        const newPhotos = pickerResult.assets.map(asset => ({
+          image_url: asset.uri, 
+          caption: ''
+        }));
+        setCurrentPhotos(prev => [...prev, ...newPhotos]);
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de charger les photos');
+      Alert.alert('Erreur', 'Échec du chargement des images');
     }
   };
 
-  const handleNextButton = () => {
-    if (photos.length < 1) {
-      return Alert.alert('Photos manquantes', 'Veuillez ajouter au moins 5 photos');
+  const handleAddPhotos = async () => {
+    const hasPermission = await requestMediaPermissions();
+    if (hasPermission) {
+      await openImagePicker();
     }
-    setProperty({ property_images: photos });
-    onNext();
   };
 
-  const renderMainPhoto = () => (
+  const validatePhotoSelection = () => {
+    if (currentPhotos.length < 5) {
+      Alert.alert('Photos insuffisantes', 'Sélectionnez au moins 5 photos');
+      return false;
+    }
+    return true;
+  };
+
+  const proceedToNextStep = () => {
+    if (!validatePhotoSelection()) return;
+    setCurrentProperty({ property_images: currentPhotos });
+    onNextStep();
+  };
+
+  const calculateImageChanges = (originalImages: any[], modifiedImages: any[]) => {
+    const originalIds = new Set(originalImages.map(img => img.id));
+    const modifiedIds = new Set(modifiedImages.map(img => img.id));
+
+    return {
+      newImages: modifiedImages.filter(img => !originalIds.has(img.id)),
+      removedImages: originalImages.filter(img => !modifiedIds.has(img.id))
+    };
+  };
+
+  const savePhotoChanges = async () => {    
+    const imageChanges = calculateImageChanges(
+      property.property_images, 
+      currentPhotos
+    );
+    
+    if (imageChanges.newImages.length > 0 || imageChanges.removedImages.length > 0) {
+      try {
+        await propertiesService.updateImages(property.id, imageChanges);
+        setCurrentProperty({ property_images: currentPhotos });
+        onCloseEditor('Modifications des photos enregistrées');
+      } catch (error) {
+        Alert.alert('Erreur', 'Échec de la mise à jour des photos');
+      }
+    }
+  };
+
+  const renderPrimaryPhoto = useCallback(() => (
     <View style={styles.mainPhotoContainer}>
-      <Image source={{ uri: photos[0].image_url }} style={styles.mainPhoto} />
-      <PhotoMenuButton onPress={() => handleMenuPress(0)} />
+      <Image 
+        source={{ uri: currentPhotos[0].image_url }} 
+        style={styles.mainPhoto} 
+      />
+      <PhotoActionsButton onMenuAction={() => showPhotoContextMenu(0)} />
     </View>
-  );
+  ), [currentPhotos]);
 
-  interface ImageItem {
-    id: string;
-    image_url: string;
-  }
-  
-  function getImageChanges(previousImages: ImageItem[], currentImages: ImageItem[]) {
-    // Création de Sets pour les IDs
-    const previousIds = new Set(previousImages.map(img => img.id));
-    const currentIds = new Set(currentImages.map(img => img.id));
-  
-    // Images ajoutées = présentes dans current mais pas dans previous
-    const addedImages = currentImages.filter(img => !previousIds.has(img.id));
-  
-    // Images supprimées = présentes dans previous mais pas dans current
-    const deletedImages = previousImages.filter(img => !currentIds.has(img.id));
-  
-    return { addedImages, deletedImages };
-  }
-
-  const renderGridPhotos = () => (
+  const renderPhotoGrid = useCallback(() => (
     <View style={styles.gridContainer}>
-      {photos.slice(1).map((photo, index) => (
-        <View key={`photo-${index + 1}`} style={styles.gridPhotoContainer}>
+      {currentPhotos.slice(1).map((photo, index) => (
+        <View key={`grid-photo-${index}`} style={styles.gridPhotoContainer}>
           <Image source={{ uri: photo.image_url }} style={styles.gridPhoto} />
-          <PhotoMenuButton onPress={() => handleMenuPress(index + 1)} />
+          <PhotoActionsButton onMenuAction={() => showPhotoContextMenu(index + 1)} />
         </View>
       ))}
     </View>
-  );
+  ), [currentPhotos]);
 
-  const PhotoMenuButton: React.FC<PhotoMenuButtonProps> = ({ onPress }) => (
-    <TouchableOpacity style={styles.photoMenuButton} onPress={onPress}>
+  const PhotoActionsButton: React.FC<PhotoActionsMenuProps> = React.memo(({ onMenuAction }) => (
+    <TouchableOpacity 
+      style={styles.photoMenuButton} 
+      onPress={onMenuAction}
+    >
       <Ionicons name="ellipsis-horizontal" size={20} color="white" />
     </TouchableOpacity>
-  );
+  ));
 
-  const submitEdit   =  async ()  => {    
-    const changes = getImageChanges(property.property_images,photos)
-    await propertiesService.updateImages(property.id, changes)
-    setProperty({ property_images: photos });
-  }
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>📷 Galerie photo</Text>
-        <Text style={styles.subtitle}>Ajoutez au minimum 5 photos de qualité ({photos.length}/10)</Text>
+        <Text style={styles.subtitle}>
+          {`Ajoutez au minimum 5 photos de qualité (${currentPhotos.length}/10)`}
+        </Text>
 
-        {photos.length > 0 ? (
+        {currentPhotos.length > 0 ? (
           <>
-            {renderMainPhoto()}
-            {renderGridPhotos()}
+            {renderPrimaryPhoto()}
+            {renderPhotoGrid()}
           </>
         ) : (
-          <TouchableOpacity 
-            style={styles.emptyState} 
-            onPress={handleAddPhoto}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="cloud-upload" size={60} color="#007BFF" />
-            <Text style={styles.emptyStateTitle}>Ajouter des photos</Text>
-            <Text style={styles.emptyStateText}>Formats supportés : JPG, PNG</Text>
-          </TouchableOpacity>
+          <PhotoUploadPrompt onPress={handleAddPhotos} />
         )}
       </ScrollView>
 
-      <View >
-        <TouchableOpacity 
-          onPress={handleAddPhoto}
-          style={[styles.addButtonInner, styles.addButton]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="add-circle" size={24} color="white" />
-          <Text style={styles.addButtonText}>Ajouter des photos</Text>
-        </TouchableOpacity>
-      </View>
+      <PhotoUploadButton onPress={handleAddPhotos} />
 
-     {!isEdit ?  <View style={styles.footer}>
-        <FooterButton text="Retour" onPress={onPrev} secondary={true} />
-        <FooterButton text="Suivant" onPress={handleNextButton} disabled={photos.length < 1} secondary={false} />
-      </View>
-      :
-      <View style={styles.footer}>
-      <FooterButton text="Fermer" onPress={onClose} secondary={true} />
-      <FooterButton text="Enregistrer" onPress={() => submitEdit()} disabled={photos.length < 1} secondary={false} />
-    </View>}
+      {!isEditMode ? (
+        <NavigationFooter
+          backButtonText="Retour"
+          forwardButtonText="Suivant"
+          onBack={onPreviousStep}
+          onForward={proceedToNextStep}
+          isForwardDisabled={currentPhotos.length < 1}
+        />
+      ) : (
+        <NavigationFooter
+          backButtonText="Fermer"
+          forwardButtonText="Enregistrer"
+          onBack={() => onCloseEditor()}
+          onForward={savePhotoChanges}
+          isForwardDisabled={currentPhotos.length < 1}
+        />
+      )}
     </View>
   );
 };
 
-const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+const PhotoUploadPrompt: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <TouchableOpacity 
+    style={styles.emptyState} 
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <Ionicons name="cloud-upload" size={60} color="#007BFF" />
+    <Text style={styles.emptyStateTitle}>Ajouter des photos</Text>
+    <Text style={styles.emptyStateText}>Formats supportés : JPG, PNG</Text>
+  </TouchableOpacity>
+);
+
+const PhotoUploadButton: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <TouchableOpacity 
+    onPress={onPress}
+    style={styles.addButton}
+    activeOpacity={0.7}
+  >
+    <Ionicons name="add-circle" size={24} color="white" />
+  </TouchableOpacity>
+);
+
+const NavigationFooter: React.FC<{
+  backButtonText: string;
+  forwardButtonText: string;
+  onBack: () => void;
+  onForward: () => void;
+  isForwardDisabled?: boolean;
+}> = ({ backButtonText, forwardButtonText, onBack, onForward, isForwardDisabled }) => (
+  <View style={styles.footer}>
+    <FooterActionButton 
+      text={backButtonText} 
+      onPress={onBack} 
+      isSecondary={true} 
+    />
+    <FooterActionButton 
+      text={forwardButtonText} 
+      onPress={onForward} 
+      isSecondary={false}
+      isDisabled={isForwardDisabled}
+    />
+  </View>
+);
+
+const FooterActionButton: React.FC<{
+  text: string;
+  onPress: () => void;
+  isSecondary?: boolean;
+  isDisabled?: boolean;
+}> = ({ text, onPress, isSecondary, isDisabled }) => (
   <TouchableOpacity 
     onPress={onPress} 
-    style={[styles.footerButton, secondary && styles.secondaryButton]}
-    disabled={disabled}
+    style={[
+      styles.footerButton, 
+      isSecondary && styles.secondaryButton,
+      isDisabled && styles.disabledButton
+    ]}
+    disabled={isDisabled}
   >
-    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+    <Text style={[
+      styles.footerButtonText, 
+      isSecondary && styles.secondaryButtonText
+    ]}>
       {text}
     </Text>
   </TouchableOpacity>
@@ -250,6 +355,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     overflow: 'hidden',
     elevation: 2,
+    width: '100%'
   },
   mainPhoto: {
     width: '100%',
@@ -280,17 +386,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     borderRadius: 20,
     padding: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   addButton: {
+    width: 70,
+    alignSelf:'center',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#007BFF',
-    padding: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    bottom: 100
+    padding: 10,
+    bottom: 80,
+    borderRadius: 15,
   },
   addButtonInner: {
     flexDirection: 'row',
@@ -348,4 +454,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotosPage;
+export default PhotosEditor;

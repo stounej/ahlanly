@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^0.8.8",
-    "@clerk/clerk-expo": "^2.7.8",
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^14.0.4",
     "@gorhom/bottom-sheet": "^5.1.1",
@@ -39,6 +38,7 @@
     "expo-dev-client": "~5.0.12",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
+    "expo-image": "~2.0.6",
     "expo-image-manipulator": "~13.0.6",
     "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.5",
@@ -56,6 +56,7 @@
     "react-native": "0.76.7",
     "react-native-bottom-tabs": "^0.8.8",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-paper": "^5.13.1",
     "react-native-reanimated": "~3.17.0",
     "react-native-safe-area-context": "5.2.0",
     "react-native-screens": "~4.9.1",

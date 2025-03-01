@@ -220,10 +220,48 @@ export const propertiesService = {
       .eq('id', propertyId)
     },
 
-    // update_description: async(propertyId, description) => {
-    //   const { data: imagesData, error: imageError } = await supabase
-    //   .from('properties')
-    //   .update({description: description})
-    //   .eq('id', propertyId)
-    // }
+    update_property_style: async(propertyId, property_style) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({property_style: property_style})
+      .eq('id', propertyId)
+    },
+    update_address: async(propertyId, address) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({
+        address: address.address,
+        zip_code: address.zip_code,
+        country: address.country,
+        city: address.city,
+        address_complement: address.address_complement
+      })
+      .eq('id', propertyId)
+    },
+    update_price: async(propertyId, price) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({
+        price: price
+      })
+      .eq('id', propertyId)
+    },
+    update_propertDetails: async(propertyId, propertyDetails) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({
+        max_guests: propertyDetails?.max_guests || 4,
+        number_of_rooms: propertyDetails?.number_of_rooms || 1,
+        number_of_beds: propertyDetails?.number_of_beds || 1,
+        number_of_bathrooms: propertyDetails?.number_of_bathrooms || 1,
+      })
+      .eq('id', propertyId)
+    },
+    update_propertyType: async(propertyId, propertyType) => {
+      const { data: imagesData, error: imageError } = await supabase
+      .from('properties')
+      .update({
+        property_type: propertyType,
+      })
+      .eq('id', propertyId)}
   }; 

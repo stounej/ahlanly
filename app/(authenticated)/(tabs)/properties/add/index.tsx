@@ -37,13 +37,24 @@ const AddProperty = forwardRef((props, ref) => {
   const handlePresentModalPress = useCallback(() => {
     bottomSheetModalRef.current?.present()
   }, [])
-
-  const handleCloseModalPress = useCallback(() => {
+  const closeModalPress = useCallback(() => {
     bottomSheetModalRef.current?.close()
+  }, [])
+
+
+  const handleCloseModalPress = useCallback((msg: string) => {
+    if(msg){      
+      props.handleCloseModal(msg)
+
+    }
+    else {
+      bottomSheetModalRef.current?.close()
+    }
   }, [])
 
   useImperativeHandle(ref, () => ({
     handlePresentModalPress,
+    closeModalPress
   }));
   const prevStep = () => {
     if (step > -1) {
@@ -62,25 +73,31 @@ const AddProperty = forwardRef((props, ref) => {
       case 0:
         return (
           <View style={styles.content}>
-            <ChooseType  onNext={nextStep}  />
+            <ChooseType  onNext={nextStep} isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress} />
           </View>
         );
       case 1:
         return (
           <View style={styles.content}>
-            <ChooseStyle  onNext={nextStep} onPrev={prevStep}/>
+            <ChooseStyle  onNext={nextStep} onPrev={prevStep} 
+            isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress}/>
           </View>
         );
       case 2:
         return (
           <View style={styles.content}>
-            <ConfirmAddress onNext={nextStep} onPrev={prevStep}/>
+            <ConfirmAddress onNext={nextStep} onPrev={prevStep}
+            isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress}/>
           </View>
         );
         case 3:
           return (
             <View style={styles.content}>
-              <PropertyDetails onNext={nextStep} onPrev={prevStep}/>
+              <PropertyDetails onNext={nextStep} onPrev={prevStep} isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress}/>
             </View>
           );
         case 4:
@@ -94,29 +111,32 @@ const AddProperty = forwardRef((props, ref) => {
           <View style={styles.content}>
             <PhotosPage onNext={nextStep}
              onPrev={prevStep}
-              isEdit={props.isEdit}
-              onClose={handleCloseModalPress}/>
+             isEditMode={props.isEditMode}
+             onCloseEditor={handleCloseModalPress}/>
           </View>
         );
         case 6:
         return (
           <View style={styles.content}>
             <AddTitlePage onNext={nextStep} onPrev={prevStep}
-                          onClose={handleCloseModalPress}
-                          isEdit={props.isEdit}
-/>
+                          isEditMode={props.isEditMode}
+                          onCloseEditor={handleCloseModalPress}/>
           </View>
         );
         case 7:
         return (
           <View style={styles.content}>
-            <DescriptionPage onNext={nextStep} onPrev={prevStep}/>
+            <DescriptionPage onNext={nextStep} onPrev={prevStep}
+            isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress}/>
           </View>
         );
         case 8:
           return (
             <View style={styles.content}>
-              <PricePage onNext={nextStep} onPrev={prevStep}/>
+              <PricePage onNext={nextStep} onPrev={prevStep}
+              isEditMode={props.isEditMode}
+            onCloseEditor={handleCloseModalPress}/>
             </View>
           );
         case 9:

@@ -1,5 +1,6 @@
 import usePropertyStore from '@/app/store/addProperty';
 import usePropertiesStore from '@/app/store/properties';
+import { propertiesService } from '@/services';
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
@@ -7,11 +8,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 
 interface TitlePageProps {
   onPrev: () => void;
   onNext: () => void;
-  onClose: () => void;
-  isEdit: boolean
+  onCloseEditor: () => void;
+  isEditMode: boolean
 }
 
-const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext, onClose, isEdit }) => {
+const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext, onCloseEditor, isEditMode }) => {
   const {setCurrentProperty, property} = usePropertyStore()
   const {setProperty} = usePropertiesStore()
 
@@ -21,10 +22,16 @@ const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext, onClose, isEdit }
     setCurrentProperty({title: title})
     onNext()
   }
-  const submitEdit   =  async ()  => {    
-    setCurrentProperty({ title: title });
-    const newProperty = {...property, title}
-    setProperty(property.id, newProperty)
+  const submitEdit   =  async ()  => {   
+    if (title !== property.title) {
+      setCurrentProperty({ title: title });
+      const newProperty = {...property, title}
+      propertiesService.update_title(property.id, title).then(()=> {
+        onCloseEditor('Vos modification sont enregistrées')
+      })
+      setProperty(property.id, newProperty)
+    }
+
   }
 
   return (
@@ -47,13 +54,13 @@ const TitlePage: React.FC<TitlePageProps> = ({ onPrev, onNext, onClose, isEdit }
       </ScrollView>
 
       {/* Footer with Navigation Buttons */}
-      {!isEdit ?  <View style={styles.footer}>
+      {!isEditMode ?  <View style={styles.footer}>
         <FooterButton text="Retour" onPress={onPrev} secondary={true} />
         <FooterButton text="Suivant" onPress={handleNextButton} disabled={!title} secondary={false} />
       </View>
       :
       <View style={styles.footer}>
-      <FooterButton text="Fermer" onPress={onClose} secondary={true} />
+      <FooterButton text="Fermer" onPress={() => onCloseEditor()} secondary={true} />
       <FooterButton text="Enregistrer" onPress={() => submitEdit()} disabled={!title} secondary={false} />
     </View>}
     </View>
@@ -128,18 +135,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e6e6e6',
-    backgroundColor: '#fff', // Pour éviter que le footer soit transparent lors du défilement
     position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderColor: '#dee2e6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   navButton: {
     backgroundColor: '#f0f0f0',

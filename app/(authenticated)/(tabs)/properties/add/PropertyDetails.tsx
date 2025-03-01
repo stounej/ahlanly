@@ -1,4 +1,5 @@
 import usePropertyStore from '@/app/store/addProperty';
+import { propertiesService } from '@/services';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,6 +12,8 @@ import {
 interface PropertyDetailsProps {
   onPrev: () => void;
   onNext: () => void;
+  onCloseEditor: () => void;
+  isEditMode: boolean;
 }
 
 interface PropertyDetails {
@@ -21,21 +24,38 @@ interface PropertyDetails {
   // Add any other properties that are part of propertyDetails
 }
 
-const PropertyDetails: React.FC<PropertyDetailsProps> = ({ onPrev, onNext }) => {
-  const { setProperty, property } = usePropertyStore();
-  const [propertyDetails, setPropertyDetails] = useState<PropertyDetails>({
+const PropertyDetails: React.FC<PropertyDetailsProps> = ({ onPrev, onNext, onCloseEditor, isEditMode }) => {
+  const { setCurrentProperty, property } = usePropertyStore();
+  const [propertyDetails, setCurrentPropertyDetails] = useState<PropertyDetails>({
     max_guests: property?.max_guests || 4,
     number_of_rooms: property?.number_of_rooms || 1,
     number_of_beds: property?.number_of_beds || 1,
     number_of_bathrooms: property?.number_of_bathrooms || 1,
   });
 
+  const submitEdit   =  async ()  => {   
+   
+      setCurrentProperty({ max_guests: propertyDetails?.max_guests || 4,
+        number_of_rooms: propertyDetails?.number_of_rooms || 1,
+        number_of_beds: propertyDetails?.number_of_beds || 1,
+        number_of_bathrooms: propertyDetails?.number_of_bathrooms || 1,
+             });
+      //const newProperty = {...property, property_style: selectedOption}
+      propertiesService.update_propertDetails(property.id, propertyDetails).then(()=> {
+        onCloseEditor('Vos modification sont enregistrées')
+        
+      })
+      //setProperty(property.id, newProperty)
+    
+
+  }
+
   const handleNextButton = () => {
-    setProperty({...propertyDetails})
+    setCurrentProperty({...propertyDetails})
     onNext()
   }
   const adjustCount = (field: keyof PropertyDetails, amount: number) => {
-    setPropertyDetails(prev => ({
+    setCurrentPropertyDetails(prev => ({
       ...prev,
       [field]: Math.max(prev[field] + amount, 1)
     }));
@@ -97,23 +117,54 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ onPrev, onNext }) => 
         />
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          onPress={onPrev} 
-          style={[styles.button, styles.backButton]}>
-          <Text style={styles.buttonTextSecondary}>Retour</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={handleNextButton} 
-          style={[styles.button, styles.nextButton]}>
-          <Text style={styles.buttonTextPrimary}>Suivant</Text>
-        </TouchableOpacity>
+      
+      {!isEditMode ?  <View style={styles.footer}>
+        <FooterButton text="Retour" onPress={onPrev} secondary={true} />
+        <FooterButton text="Suivant" onPress={handleNextButton}  secondary={false} />
       </View>
+      :
+      <View style={styles.footer}>
+      <FooterButton text="Fermer" onPress={() => onCloseEditor()} secondary={true} />
+      <FooterButton text="Enregistrer" onPress={() => submitEdit()}  secondary={false} />
+    </View>}
     </View>
   );
 };
 
+const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.footerButton, secondary && styles.secondaryButton]}
+    disabled={disabled}
+  >
+    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
 const styles = StyleSheet.create({
+  footerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    minWidth: 170,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#e9ecef',
+  },
+  footerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#495057',
+  },
+  disabledButtonText: {
+    color: '#868e96',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -190,10 +241,14 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 24,
+    padding: 10,
     backgroundColor: 'white',
     borderTopWidth: 1,
-    borderTopColor: '#ECECEC',
+    borderColor: '#dee2e6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   button: {
     borderRadius: 25,
