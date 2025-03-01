@@ -74,6 +74,14 @@ export const tasksService = {
     return data as TaskCategory[];
   },
 
+  getTaskCategoriesByProperty: async (property_id) => {
+    const { data, error } = await supabase.from('task_categories')
+    .select('id, name, icon_library, icon_name, \
+      tasks(id, status, property_id)')
+      .eq('tasks.property_id', property_id);
+    if (error) throw error;
+    return data as TaskCategory[];
+  },
 
   getById: async (id: string) => {
     const { data, error } = await supabase

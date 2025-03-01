@@ -1,9 +1,5 @@
-import { Stack, usePathname, useRouter, useSegments } from "expo-router";
-import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo'
-import { tokenCache } from "@/utils/cache";
-import Colors from "@/constants/Colors";
+import { Stack, useRouter } from "expo-router";
 import { useEffect, Suspense, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import  supabase from '../supabaseClient'; // Assurez-vous d'avoir configuré Supabase

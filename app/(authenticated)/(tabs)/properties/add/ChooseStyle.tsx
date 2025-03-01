@@ -2,22 +2,38 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import usePropertyStore from '@/app/store/addProperty';
+import { propertiesService } from '@/services';
 
 interface ChooseStyleProps {
   onNext: () => void;
   onPrev: () => void;
+  onCloseEditor: () => void;
+  isEditMode: boolean;
 }
 
-const ChooseStyle: React.FC<ChooseStyleProps> = ({ onNext, onPrev }) => {
-  const {setProperty, property} = usePropertyStore()
+const ChooseStyle: React.FC<ChooseStyleProps> = ({ onNext, onPrev,onCloseEditor, isEditMode }) => {
+  const {setCurrentProperty, property} = usePropertyStore()
   const [selectedOption, setSelectedOption] = useState(property?.property_style);
   const scaleValue = new Animated.Value(1);
   const borderColor = new Animated.Value(0);
 
 
   const handleNextButton = () => {
-    setProperty({property_style: selectedOption})
+    setCurrentProperty({property_style: selectedOption})
     onNext()
+  }
+
+  const submitEdit   =  async ()  => {   
+    if (selectedOption !== property.title) {
+      setCurrentProperty({ property_style: selectedOption });
+      //const newProperty = {...property, property_style: selectedOption}
+      propertiesService.update_property_style(property.id, selectedOption).then(()=> {
+        onCloseEditor('Vos modification sont enregistrées')
+        
+      })
+      //setProperty(property.id, newProperty)
+    }
+
   }
 
   const handleSelectOption = (option: any) => {
@@ -105,34 +121,58 @@ const ChooseStyle: React.FC<ChooseStyleProps> = ({ onNext, onPrev }) => {
           icon={<FontAwesome5 name="users" size={20} color={selectedOption === 'hostel' ? '#007BFF' : '#333'} />}
           title="Chambre partagée"
           subtitle="Espace commun dans une auberge professionnelle"
-          optionName="hostel"
+          optionName="hostel" // change
         />
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          onPress={onPrev} 
-          style={[styles.navButton, styles.shadow]}
-        >
-          <Text style={styles.navButtonText}>Retour</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={handleNextButton} 
-          style={[
-            styles.nextButton, 
-            !selectedOption && styles.disabledButton,
-            styles.shadow
-          ]}
-          disabled={!selectedOption}
-        >
-          <Text style={styles.nextButtonText}>Suivant</Text>
-        </TouchableOpacity>
+     {/* Footer with Navigation Buttons */}
+     {!isEditMode ?  <View style={styles.footer}>
+        <FooterButton text="Retour" onPress={onPrev} secondary={true} />
+        <FooterButton text="Suivant" onPress={handleNextButton} disabled={!selectedOption} secondary={false} />
       </View>
+      :
+      <View style={styles.footer}>
+      <FooterButton text="Fermer" onPress={() => onCloseEditor()} secondary={true} />
+      <FooterButton text="Enregistrer" onPress={() => submitEdit()} disabled={!selectedOption} secondary={false} />
+    </View>}
     </View>
   );
 };
+const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.footerButton, secondary && styles.secondaryButton]}
+    disabled={disabled}
+  >
+    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
+  footerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    minWidth: 170,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#e9ecef',
+  },
+  footerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#495057',
+  },
+  disabledButtonText: {
+    color: '#868e96',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',

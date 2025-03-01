@@ -1,7 +1,7 @@
 import { propertiesService, Property } from '@/services';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
 import AddPropertyModal from './add';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import ManageTasksModal from './tasks';
 import { TaskCategory, tasksService } from '@/services/tasks';
 import Loading from '@/components/Loading';
+import { Image } from 'expo-image';
+
 
 type ModalHandles = {
   handlePresentModalPress: () => void;
@@ -31,7 +33,7 @@ const PropertiesScreen = () => {
     manageTasksModalRef.current?.handlePresentModalPress(); 
   };
 
-  useEffect(() => {
+  useFocusEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [categoriesResponse, propertiesResponse] = await Promise.all([
@@ -49,7 +51,7 @@ const PropertiesScreen = () => {
     };
 
     fetchInitialData();
-  }, []);
+  });
 
   const renderPropertyItem = ({ item: property }: { item: Property }) => (
     <TouchableOpacity 
@@ -59,7 +61,7 @@ const PropertiesScreen = () => {
       <Image 
         source={{ uri: property.property_images[0]?.image_url }} 
         style={styles.propertyImage} 
-        resizeMode="cover"
+        contentFit="cover"
       />
       <View style={[
         styles.availabilityBadge, 

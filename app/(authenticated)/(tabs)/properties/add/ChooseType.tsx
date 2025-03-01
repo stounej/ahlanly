@@ -11,13 +11,16 @@ import Hotel from '@/app/buttons/properties/hotel';
 import Riad from '@/app/buttons/properties/riad';
 import Villa from '@/app/buttons/properties/villa';
 import usePropertyStore from '@/app/store/addProperty';
+import { propertiesService } from '@/services';
 
 interface ChooseTypeProps {
   onNext: () => void; // Define the type for onNext
+  onCloseEditor: () => void;
+  isEditMode: boolean;
 }
 
-const ChooseType: React.FC<ChooseTypeProps> = ({ onNext }) => {
-  const {setProperty, property} = usePropertyStore()
+const ChooseType: React.FC<ChooseTypeProps> = ({ onNext,  onCloseEditor, isEditMode }) => {
+  const {setCurrentProperty, property} = usePropertyStore()
   const [selectedType, setSelectedType] = useState(property?.property_type);
 
   const handleTypeSelect = (type: string) => {
@@ -25,9 +28,23 @@ const ChooseType: React.FC<ChooseTypeProps> = ({ onNext }) => {
   };
 
   const handleNextButton = () => {
-    setProperty({property_type: selectedType})
+    setCurrentProperty({property_type: selectedType})
     onNext()
   }
+
+  const submitEdit   =  async ()  => {   
+    
+    setCurrentProperty({ property_type: selectedType
+           });
+    //const newProperty = {...property, property_style: selectedOption}
+    propertiesService.update_propertyType(property.id, selectedType).then(()=> {
+      onCloseEditor('Vos modification sont enregistrées')
+      
+    })
+    //setCurrentProperty(property.id, newProperty)
+  
+
+}
 
   return (
     <View style={styles.container}>
@@ -58,21 +75,54 @@ const ChooseType: React.FC<ChooseTypeProps> = ({ onNext }) => {
         </View>
       </ScrollView>
 
-      {/* Footer with Next Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          onPress={handleNextButton} 
-          style={[styles.nextButton, !selectedType && styles.disabledNextButton]}
-          disabled={!selectedType}
-        >
-          <Text style={styles.nextButtonText}>Suivant</Text>
-        </TouchableOpacity>
+        
+      {!isEditMode ?  <View style={styles.footer}>
+        <FooterButton text="Suivant" onPress={handleNextButton}  secondary={false} />
       </View>
+      :
+      <View style={styles.footer}>
+      <FooterButton text="Fermer" onPress={() => onCloseEditor()} secondary={true} />
+      <FooterButton text="Enregistrer" onPress={() => submitEdit()}  secondary={false} />
+    </View>}
     </View>
   );
 };
 
+const FooterButton: React.FC<{ text: string; onPress: () => void; secondary?: boolean; disabled?: boolean }> = ({ text, onPress, secondary, disabled }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.footerButton, secondary && styles.secondaryButton]}
+    disabled={disabled}
+  >
+    <Text style={[styles.footerButtonText, secondary && styles.secondaryButtonText]}>
+      {text}
+    </Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
+  footerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    minWidth: 170,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#e9ecef',
+  },
+  footerButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: '#495057',
+  },
+  disabledButtonText: {
+    color: '#868e96',
+  },
   container: {
     flex: 1,
     backgroundColor: 'white',
@@ -116,18 +166,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e6e6e6',
-    backgroundColor: '#fff', // Pour éviter que le footer soit transparent lors du défilement
     position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderColor: '#dee2e6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   nextButton: {
     backgroundColor: '#007BFF',
