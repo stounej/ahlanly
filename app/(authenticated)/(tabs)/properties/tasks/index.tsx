@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState , forwardRef, useImperativeHandle} from "react";
 import { View, StyleSheet } from "react-native";
 import  { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet";
-import ShowTasks from "./add1";
-import AddTaskScreen from "./add2";
+import ShowTasks from "./ShowTasks";
+import AddTaskScreen from "./AddTaskScreen";
 
 interface ChildRef {
   handlePresentModalPress: () => void; // Define the methods you want to expose
@@ -10,12 +10,17 @@ interface ChildRef {
 
 interface ManageTasksProps {
   step: number;
-  hideAppartment?: boolean; // Optional if not always provided
+  propertyId?: string; // Optional if not always provided
+  tasks: any;
+  selectedCateg:any
 }
 
-const ManageTasks = forwardRef<ChildRef, ManageTasksProps>(({ step, hideAppartment }, ref) => {
+const ManageTasks = forwardRef<ChildRef, ManageTasksProps>(({ step, propertyId, tasks, selectedCateg }, ref) => {
   const [currentStep, setStep] = useState(step ?? 0); // Current step
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  console.log('propertyId');
+  console.log(propertyId);
+  
 
   const [formData, setFormData] = useState({
     propertyName: "",
@@ -50,14 +55,15 @@ const ManageTasks = forwardRef<ChildRef, ManageTasksProps>(({ step, hideAppartme
       case 0:
         return (
           <View style={styles.content}>
-              <ShowTasks selectedCateg={hideAppartment}/>
+          
+              <ShowTasks categories={tasks} selectedCateg={selectedCateg} propertyId= {propertyId}/>
           </View>
 
         );
       case 1:
         return (
           <View style={styles.content}>
-            <AddTaskScreen  hideAppartment={hideAppartment}/>
+            <AddTaskScreen  propertyId={propertyId}/>
           </View>
         );
       default:
@@ -74,7 +80,9 @@ const ManageTasks = forwardRef<ChildRef, ManageTasksProps>(({ step, hideAppartme
         // onChange={()=>{setStep(0)}}
       >
          <BottomSheetView  style={styles.contentContainer}>
-        {renderContent()}
+         
+          {renderContent()}
+
         </BottomSheetView>
       </BottomSheetModal>
     </View>

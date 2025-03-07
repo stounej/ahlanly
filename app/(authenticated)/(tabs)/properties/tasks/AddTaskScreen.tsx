@@ -9,7 +9,7 @@ import { tasksService, UsersService, TaskCategory, User, Property, propertiesSer
 import { Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 interface AddTaskScreenProps {
-  hideAppartment?: boolean;
+  propertyId?: string;
 }
 
 // Define the type for the icon components
@@ -33,8 +33,8 @@ interface Task {
   // Add other properties as needed
 }
 
-const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
-  const [form, setForm] = useState<any>({});
+const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ propertyId }) => {
+  const [form, setForm] = useState<any>({property_id:propertyId});
   const [showPropertiesModal, setShowPropertiesModal] = useState(false);
   const [categories, setCategories] = useState<TaskCategory[]>([]);
   const [collaborators, setCollaborators] = useState<User[]>([]);
@@ -67,6 +67,7 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
       ...prev || {},
       [field]: prev?.[field] ? false : true
     }));
+    
   };
 
   const renderIcon = (iconLibrary: string, iconName: string) => {
@@ -141,6 +142,8 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
     const {   hasEquipment,
       assignCollaborator,
       addToCalendar,assignAppart, ...data} =  form
+      
+      
     const task = await tasksService.create(data as Task)
     // if (form.addToCalendar) {
     //   handleAddToCalendar();
@@ -182,7 +185,6 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles?.title}>Nouvelle Tâche</Text>
 
         {/* Titre */}
         <View style={styles.section}>
@@ -196,7 +198,7 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
         </View>
 
         {/* Bien concerné */}
-        {!hideAppartment && (
+        {!propertyId && (
           <View style={styles.section}>
             <Text style={styles.label}>Cette tâche concerne un bien ?</Text>
 
@@ -244,16 +246,14 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
                 key={category.id}
                 style={[
                   styles.categoryButton,
-                  form.category_id === category.id && { 
-                    backgroundColor: category.color + '20',
-                    borderColor: category.color
-                  }
+                  form.category_id === category.id && { backgroundColor: '#808080' }
                 ]}
                 onPress={() => setForm({...form, category_id: category.id})}>
                 {renderIcon(category.icon_library, category.icon_name)}
                 <Text style={[
                   styles.categoryText,
-                  form.category_id === category.id && { color: category.color }
+                  form.category_id === category.id && { color: 'black' }
+
                 ]}>
                   {category.name}
                 </Text>
@@ -313,19 +313,22 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
                 selectedValue={form.recurrence.frequency}
                 onValueChange={value => handleRecurrenceChange('frequency', value)}
                >
-                <Picker.Item label="Toutes les semaines" value="weekly" />
-                <Picker.Item label="Tous les mois" value="monthly" />
-                <Picker.Item label="Tous les ans" value="yearly" />
-                <Picker.Item label="Tous les X jours" value="daily" />
+                <Picker.Item 
+                label={`Tous les ${form.recurrence.interval|| 0} ${form.recurrence.interval > 0 ? 'semaines' : 'semaine'}`}
+                 value="weekly" />
+                <Picker.Item label={`Tous les ${form.recurrence.interval || 0} mois`} value="monthly" />
+                <Picker.Item  label={`Tous les ${form.recurrence.interval|| 0} ${form.recurrence.interval > 0 ? 'années' : 'année'}`}
+                  value="yearly" />
+                <Picker.Item  label={`Tous les ${form.recurrence.interval|| 0} ${form.recurrence.interval > 0 ? 'jours' : 'jour'}`} value="daily" />
               </Picker>
 
-              {form.recurrence.frequency === 'daily' && (
+              {form.recurrence.frequency && (
                 <TextInput
                   style={styles.input}
                   keyboardType="numeric"
                   placeholder="Nombre de jours"
-                  value={String(form.recurrence.interval)}
-                  onChangeText={text => handleRecurrenceChange('interval', parseInt(text) || 1)}
+                  value={String(form.recurrence.interval || '')}
+                  onChangeText={text => handleRecurrenceChange('interval', parseInt(text)  )}
                 />
               )}
             </View>
@@ -459,7 +462,7 @@ const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ hideAppartment }) => {
 
       <View style={styles.fixedFooter}>
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitText}>Enregistrer la tâche</Text>
+          <Text style={styles.submitText}>Enregistrer</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -490,11 +493,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedName: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
   },
   selectorPlaceholder: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#999',
     flex: 1,
   },
@@ -504,7 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 20,
     color: '#333',
@@ -534,11 +537,11 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15,
     alignSelf:'center',
      },
   collaboratorName: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
   },
   propertySelector: {
@@ -563,11 +566,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   selectedPropertyText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
   },
   placeholderText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#999',
     flex: 1,
   },
@@ -588,12 +591,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   propertyListTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
   },
   propertyListLocation: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
     marginTop: 2,
   },
@@ -638,7 +641,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 13,
     color: '#444',
   },
   categoryIcon: {
@@ -656,7 +659,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#2a7fde',
-    borderRadius: 8,
+    borderRadius: 25,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -686,7 +689,7 @@ const styles = StyleSheet.create({
   //   elevation: 2,
   // },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#444',
     marginBottom: 12,
     fontWeight: '500',
@@ -696,7 +699,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: 14,
   },
   datePickerContainer: {
     flexDirection: 'row',
@@ -709,7 +712,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
     marginLeft: 10,
     color: '#555',
   },
@@ -767,7 +770,7 @@ const styles = StyleSheet.create({
   },
   submitText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   checkboxContainer: {
@@ -802,7 +805,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#f8f9fa',
-    padding: 20,
+    paddingBottom: 13,
+    paddingTop: 10,
+    paddingHorizontal:50,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },

@@ -33,7 +33,7 @@ const PropertiesScreen = () => {
     manageTasksModalRef.current?.handlePresentModalPress(); 
   };
 
-  useFocusEffect(() => {
+  useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [categoriesResponse, propertiesResponse] = await Promise.all([
@@ -51,7 +51,7 @@ const PropertiesScreen = () => {
     };
 
     fetchInitialData();
-  });
+  }, []);
 
   const renderPropertyItem = ({ item: property }: { item: Property }) => (
     <TouchableOpacity 
