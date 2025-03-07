@@ -1,13 +1,14 @@
   import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
   import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Dimensions } from 'react-native';
   import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-  import { propertiesService, Property, Task, tasksService } from '@/services';
+  import { propertiesService, Property, Task, TaskCategory, tasksService } from '@/services';
   import { useFocusEffect, useLocalSearchParams,  } from 'expo-router';
   import AddProperty from '../(tabs)/properties/add';
 import usePropertyStore from '@/app/store/addProperty';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { Snackbar } from 'react-native-paper';
+import ManageTasksModal from '../(tabs)/properties/tasks';
 
   type ChildRef = {
     handlePresentModalPress: () => void;
@@ -225,7 +226,9 @@ import { Snackbar } from 'react-native-paper';
       </View>
        {/* Tasks Section */}
        <View style={styles.section}>
-            {renderSectionHeader('Tâches', () => {})}
+            {renderSectionHeader('Tâches', () => {
+              handleCategoryPress()
+            })}
             <ScrollView 
               horizontal 
               style={styles.categoriesScrollView}
@@ -268,9 +271,14 @@ import { Snackbar } from 'react-native-paper';
             {renderDetailsGrid()}
           </View>
         
+        <Text>
+        {property?.id}
+        </Text>
   
         {/* Footer reste inchangé */}
-        <AddProperty ref={childRef} step={step } isEditMode={true} handleCloseModal={handleCloseModal}/>
+        <AddProperty ref={childRef} step={step } isEditMode={true} handleCloseModal={handleCloseModal} propertyId={property?.id} />
+        <ManageTasksModal tasks={property.tasksByCategory} ref={manageTasksModalRef} selectedCategory={selectedCategory} propertyId={property?.id} />
+
         <Snackbar
         visible={visible}
         onDismiss={()=>{}}

@@ -45,10 +45,7 @@ export const tasksService = {
     .select('id, status, due_date, title, \
       task_categories(name, id, icon_library, icon_name),\
        properties(title, description, property_images(image_url))');
-    console.log(error);
-    console.log('data');
-    console.log(data);
-
+    
     if (error) throw error;
     return data as Task[];
   },
@@ -59,8 +56,7 @@ export const tasksService = {
         .update({ status: taskStatus })
         .eq('id', taskId)
         .single();
-        console.log('error');
-      console.log(error);
+       
       
       if (error) throw error;
       return data as Task;
@@ -74,11 +70,14 @@ export const tasksService = {
     return data as TaskCategory[];
   },
 
-  getTaskCategoriesByProperty: async (property_id) => {
-    const { data, error } = await supabase.from('task_categories')
+  getTaskCategoriesByProperty: async (property_id: string) => {
+    let { data, error } = await supabase.from('task_categories')
     .select('id, name, icon_library, icon_name, \
-      tasks(id, status, property_id)')
+      tasks(id, status, title, property_id, due_date)')
       .eq('tasks.property_id', property_id);
+
+      //data = data?.filter((elem: any)=> elem.tasks.length > 0)
+      
     if (error) throw error;
     return data as TaskCategory[];
   },
@@ -98,6 +97,8 @@ export const tasksService = {
       .from('tasks')
       .insert([newTask])
       .select();
+      console.log(newTask);
+      
       console.log(error);
       
     if (error) throw error;
